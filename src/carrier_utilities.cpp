@@ -71,13 +71,13 @@ void CarrierUtilities::LED_SetAll(uint32_t color)
     _carrier.leds.show();
 }
 
-void CarrierUtilities::carrierUtil_LED_Clear(uint8_t ledIndex)
+void CarrierUtilities::LED_Clear(uint8_t ledIndex)
 {
     _carrier.leds.setPixelColor(ledIndex, 0);
     _carrier.leds.show();
 }
 
-void CarrierUtilities::carrierUtil_LED_ClearAll()
+void CarrierUtilities::LED_ClearAll()
 {
     _carrier.leds.clear();
     _carrier.leds.show();

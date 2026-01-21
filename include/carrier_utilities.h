@@ -26,8 +26,8 @@ public:
     // ------ LED Utilities ------
     void LED_Set(uint8_t ledIndex, uint32_t color);
     void LED_SetAll(uint32_t color);
-    void carrierUtil_LED_Clear(uint8_t ledIndex);
-    void carrierUtil_LED_ClearAll();
+    void LED_Clear(uint8_t ledIndex);
+    void LED_ClearAll();
 
     // ------ Button Utilities ------
     bool Button_PressUp(touchButtons button);
