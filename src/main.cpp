@@ -4,9 +4,16 @@
 #include <config.h>
 #include <wifi_handle.h>
 
-MKRIoTCarrier carrier;
+#include <bme688.h>
+#include <apds-9960.h>
+#include <st0160.h>
 
+MKRIoTCarrier carrier;
 CarrierUtilities carr(carrier);
+
+BME688 bme688(carrier);
+APDS_9960 apds9960(carrier);
+ST0160 st0160(carrier);
 
 void setup() 
 {
@@ -36,6 +43,6 @@ void setup()
 
 void loop() 
 {
-  
+
 }
 
