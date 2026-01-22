@@ -32,6 +32,14 @@ void CarrierUtilities::Display_Print(String text, uint8_t x, uint8_t y, uint8_t 
     _display.print(text);
 }
 
+void CarrierUtilities::Display_PrintDefault(String text, uint8_t size, uint32_t color)
+{
+    _display.setTextSize(size);
+    _display.setTextColor(color);
+    _display.print(text);
+}
+
+
 void CarrierUtilities::Display_PrintLn(String text, uint8_t x, uint8_t y, uint8_t size, uint32_t color)
 {
     _display.setTextSize(size);
