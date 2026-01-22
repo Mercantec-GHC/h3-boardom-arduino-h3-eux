@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <Arduino_MKRIoTCarrier.h>
-#include <config.h>
 #include <carrier_utilities.h>
+#include <config.h>
+#include <wifi_handle.h>
 
 MKRIoTCarrier carrier;
 
@@ -15,12 +16,22 @@ void setup()
 
     carrier.begin();
 
-    carr.Display_SetRotation(ROTATION_90);
-    carr.Display_Fill(ST7735_BLUE);
-    carr.Display_PrintCentered("Hello World", 100, 2, ST7735_WHITE);
-    carr.Display_PrintLn("The utilities are working!", 50, 150, 1, ST7735_WHITE);
+    carr.Display_SetRotation(ROTATION_0);
 
-    carr.LED_SetAll(ST7735_BLUE);
+    while (!wifi_Init(carr, 3500)) 
+    {
+        carr.Display_Fill(ST7735_RED);
+        carr.Display_PrintCentered("WIFI FAILED", 100, 2, ST7735_WHITE);
+        carr.Display_PrintCentered("PRESS (04) TO TRY AGAIN", 130, 1, ST7735_WHITE);
+
+        while (1) 
+        {
+            if (carr.Button_PressDown(TOUCH4)) 
+            {
+                break;
+            }
+        }
+    }
 }
 
 void loop() 

@@ -20,6 +20,7 @@ public:
     void Display_Fill(uint32_t color);
     void Display_SetRotation(DisplayRotation rotation);
     void Display_Print(String text, uint8_t x, uint8_t y, uint8_t size, uint32_t color);
+    void Display_PrintDefault(String text, uint8_t size, uint32_t color);
     void Display_PrintLn(String text, uint8_t x, uint8_t y, uint8_t size, uint32_t color);
     void Display_PrintCentered(String text, uint8_t y, uint8_t size, uint32_t color);
 
