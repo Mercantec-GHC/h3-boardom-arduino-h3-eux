@@ -10,6 +10,18 @@ enum DisplayRotation {
     ROTATION_270
 };
 
+enum Colors {
+    COLOR_BLACK = 0x0000,
+    COLOR_WHITE = 0xFFFF,
+    COLOR_RED = 0xF800,
+    COLOR_GREEN = 0x07E0,
+    COLOR_DARK_GREEN = 0x0320,
+    COLOR_BLUE = 0x001F,
+    COLOR_YELLOW = 0xFFE0,
+    COLOR_CYAN = 0x07FF,
+    COLOR_MAGENTA = 0xF81F
+};
+
 
 class CarrierUtilities {
 public:
