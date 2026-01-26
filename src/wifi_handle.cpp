@@ -33,6 +33,10 @@ bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs)
             if (WiFi.status() == WL_CONNECTED) 
             {
                 connected = true;
+                Serial.println("WIFI Connection: OK");
+                Serial.println(WiFi.localIP().toString());
+                _carrUtil->Display_PrintLn("WIFI Connection: OK", 50, 110, 1, ST7735_GREEN);
+                _carrUtil->Display_PrintLn(WiFi.localIP().toString(), 50, 130, 1, ST7735_WHITE);
                 break;
             }
         }
@@ -47,15 +51,19 @@ bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs)
             _carrUtil->Display_PrintLn("Retrying" + String(i + 1) + "/" + String(retries) + "...", 50, 140, 1, ST7735_WHITE);
             delay(750);
         }
-
-    _carrUtil->Display_PrintLn("WIFI Connection: OK", 50, 110, 1, ST7735_GREEN);
-    _carrUtil->Display_PrintLn(WiFi.localIP().toString(), 50, 130, 1, ST7735_WHITE);
     }
+
+    delay(1000);
 
     return connected;
 }
 
-String wifi_GetDeviceId()
+bool wifi_IsConnected()
+{
+    return WiFi.status() == WL_CONNECTED;
+}
+
+String wifi_GetDeviceID()
 {
     byte mac[6];
     WiFi.macAddress(mac);
@@ -80,18 +88,17 @@ String readResponseBody()
     return client.readString();
 }
 
-bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, const char server_ip, uint16_t server_port)
+bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, const char* server_ip, uint16_t server_port)
 {
     uint8_t retries = 3;
 
     for (uint8_t i = 0; i < retries; i++)
     {
+        Serial.println("Connecting to server: " + String(server_ip) + ":" + String(server_port));
+
         if (!client.connect(server_ip, server_port))
         {
-            Serial.println("Connection Failed");
-
-            _carrUtil->Display_Fill(ST7735_RED);
-            _carrUtil->Display_PrintLn("CONN FAILED", 50, 160, 2, ST7735_WHITE);
+            Serial.println(" -> FAILED");
             delay(750);
             return false;
         }
@@ -122,6 +129,12 @@ bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, cons
         }
 
         bool success = statusLine.indexOf("200") > 0;
+
+        if (success == false)
+        {
+            success = statusLine.indexOf("201") > 0;
+        }   
+
         Serial.print(" -> ");
         Serial.println(success ? "OK" : "FAILED");
 
