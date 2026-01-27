@@ -17,6 +17,7 @@ enum DeviceState {
     DISCONNECTED,
     CONNECTED,
     HEARTBEAT_ERROR,
+    DATA_ERROR,
     ERROR,
 };
 
@@ -26,6 +27,7 @@ enum DeviceScreen {
     HUMIDITY,
     PRESSURE,
     LIGHT,
+    SETTINGS,
 };
 
 typedef struct 
@@ -49,7 +51,9 @@ String deviceId;
 
 DeviceState state = DISCONNECTED;
 DeviceState lastState = ERROR;
+
 DeviceScreen screen = ALL;
+DeviceScreen lastScreen = LIGHT;
 
 SensorData sensorData;
 unsigned long lastSensorUpdateMs = 0;
@@ -69,7 +73,7 @@ void setup()
 
     USING_CARRIER_CASE ? carrier.withCase() : carrier.noCase();
 
-    randomSeed(micros());
+    randomSeed(analogRead(A6) ^ micros() ^ millis());
     heartbeatIntervalMs = random(60000, 180000); // Random interval between 1 and 2 minutes
 
     carrier.begin();
@@ -143,8 +147,15 @@ void loop()
 
         if (updateScreen)
         {
-            carrUtil.Display_Fill(COLOR_DARK_GREEN);
-            carrUtil.Display_PrintCentered(String(deviceId), 20, 1, COLOR_WHITE);
+            if (screen == SETTINGS)
+            {
+                carrUtil.Display_Fill(COLOR_BLACK);
+            }
+            else
+            {
+                carrUtil.Display_Fill(COLOR_DARK_GREEN);
+                carrUtil.Display_PrintCentered("SETTINGS", 20, 1, COLOR_WHITE);
+            }
 
             if (screen == ALL)
             {
@@ -177,21 +188,55 @@ void loop()
                 carrUtil.Display_PrintCentered(String(sensorData.light), 110, 3, COLOR_WHITE);
                 writeArrows();
             }
+            else if (screen == SETTINGS)
+            {
+                carrUtil.Display_Fill(COLOR_BLACK);
+                carrUtil.Display_PrintCentered("SETTINGS", 30, 2, COLOR_WHITE);
+
+                carrUtil.Display_Print("DEVICE ID: " + deviceId, 30, 60, 1, COLOR_WHITE);
+                carrUtil.Display_Print("HEARTBEAT: " + String(heartbeatIntervalMs / 1000) + " seconds", 30, 75, 1, COLOR_WHITE);
+                carrUtil.Display_Print("DATA: " + String(DATA_INTERVAL_MS / 1000) + " seconds", 30, 90, 1, COLOR_WHITE);
+                carrUtil.Display_Print("DASHBOARD: " + String(SERVER_IP) + ":" + String(DASHBOARD_PORT), 30, 105, 1, COLOR_WHITE);
+                carrUtil.Display_Print("DATABASE: " + String(SERVER_IP) + ":" + String(DB_API_PORT), 30, 120, 1, COLOR_WHITE);
+                carrUtil.Display_Print("WIFI SSID: " + String(WIFI_SSID), 30, 135, 1, COLOR_WHITE);
+
+                carrUtil.Display_Print("<- BACK", 30, 160, 1, COLOR_WHITE);
+            }
+
+            if (screen != SETTINGS)
+            {
+                lastScreen = screen;
+            }
 
             updateScreen = false;
         }
 
-        if (carrUtil.Button_PressDown(TOUCH4))
+        if (screen == SETTINGS)
         {
-            screen = static_cast<DeviceScreen>((screen + 1) % 5);
-            updateScreen = true;
+            if (carrUtil.Button_PressDown(TOUCH0))
+            {
+                screen = lastScreen;
+                updateScreen = true;
+            }
         }
-        else if (carrUtil.Button_PressDown(TOUCH0))
+        else
         {
-            screen = static_cast<DeviceScreen>((screen - 1 + 5) % 5);
-            updateScreen = true;
+            if (carrUtil.Button_PressDown(TOUCH4))
+            {
+                screen = static_cast<DeviceScreen>((screen + 1) % 5);
+                updateScreen = true;
+            }
+            else if (carrUtil.Button_PressDown(TOUCH0))
+            {
+                screen = static_cast<DeviceScreen>((screen - 1 + 5) % 5);
+                updateScreen = true;
+            }
+            else if (carrUtil.Button_PressDown(TOUCH2))
+            {
+                screen = SETTINGS;
+                updateScreen = true;
+            }
         }
-
 
         if (now - lastHeartbeatMs >= heartbeatIntervalMs)
         {
@@ -237,28 +282,53 @@ void loop()
         }
     }
 
+    if (state == DATA_ERROR)
+    {
+        if (lastState != DATA_ERROR)
+        {
+            carrUtil.Display_Fill(ST7735_RED);
+            carrUtil.Display_PrintCentered(deviceId, 60, 2, ST7735_WHITE);
+            carrUtil.Display_PrintCentered("DATA TRANSMISSION ERROR", 110, 2, ST7735_WHITE);
+            carrUtil.Display_PrintCentered("PRESS (03) TO RETRY", 130, 1, ST7735_WHITE);
+        }
+
+        if (carrUtil.Button_PressDown(TOUCH3))
+        {
+            carrUtil.Display_Fill(ST7735_BLUE);
+            carrUtil.Display_PrintCentered("RETRYING DATA TRANSMISSION", 110, 2, ST7735_WHITE);
+
+            if (dataTransmit.sendData(deviceId, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light, sensorData.moisture)) 
+            {
+                state = CONNECTED;
+            } 
+            else 
+            {
+                Serial.print("Data transmission retry failed - staying in DATA_ERROR");
+                state = DATA_ERROR;
+            }
+        }
+    }
+
     lastState = state;
 
     if (now - lastSensorUpdateMs >= 2500)
     {
         lastSensorUpdateMs = now;
-        updateSensorData();
+        if (screen != SETTINGS)
+        {
+            updateSensorData();
+        }
+        
     }
 
     if (now - lastDataTransmissionMs >= DATA_INTERVAL_MS)
     {
         lastDataTransmissionMs = now;
 
-        Serial.print("Transmitting Data...");
-
-        if (dataTransmit.sendData(deviceId, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light, sensorData.moisture)) 
+        if (!dataTransmit.sendData(deviceId, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light, sensorData.moisture)) 
         {
-            Serial.println("Data Transmission Successful");
+            state = DATA_ERROR;
         } 
-        else 
-        {
-            Serial.println("Data Transmission Failed");
-        }
     }
 }
 
