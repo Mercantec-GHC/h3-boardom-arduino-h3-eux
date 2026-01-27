@@ -128,20 +128,20 @@ bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, cons
             response = response.substring(jsonStart);
         }
 
-        uint16_t idx_200 = statusLine.indexOf("200");
-        uint16_t idx_201 = statusLine.indexOf("201");
+        int16_t idx_200 = statusLine.indexOf("200");
+        int16_t idx_201 = statusLine.indexOf("201");
 
         bool success = false;
+
+        Serial.println("Idx_200: " + String(idx_200));
+        Serial.println("Idx_201: " + String(idx_201));
 
         if (idx_200 >= 0 || idx_201 >= 0)
         {
             success = true;
         }
-        else
-        {
-            success = false;
-        }
 
+        Serial.println(statusLine);
         Serial.print(" -> ");
         Serial.println(success ? "OK" : "FAILED");
 

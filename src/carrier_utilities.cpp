@@ -19,6 +19,11 @@ void CarrierUtilities::Display_Fill(uint32_t color)
     _display.fillScreen(color);
 }
 
+void CarrierUtilities::Display_SetCursor(uint8_t x, uint8_t y)
+{
+    _display.setCursor(x, y);
+}
+
 void CarrierUtilities::Display_SetRotation(DisplayRotation rotation)
 {
     _display.setRotation(static_cast<uint8_t>(rotation));
