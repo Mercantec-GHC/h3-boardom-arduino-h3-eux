@@ -19,7 +19,7 @@ bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs)
         _carrUtil->Display_PrintLn("Connecting to WIFI", 50, 60, 1, ST7735_WHITE);
         _carrUtil->Display_Print("SSID: ", 50, 90, 1, ST7735_WHITE);
         _carrUtil->Display_PrintLn(WIFI_SSID, 100, 90, 1, ST7735_WHITE);
-        _carrUtil->Display_Print("Pass: ", 50, 100, 1, ST7735_WHITE);
+        _carrUtil->Display_Print("PASS: ", 50, 100, 1, ST7735_WHITE);
         _carrUtil->Display_PrintLn(WIFI_PASS, 100, 100, 1, ST7735_WHITE);
 
         WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -128,12 +128,19 @@ bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, cons
             response = response.substring(jsonStart);
         }
 
-        bool success = statusLine.indexOf("200") > 0;
+        uint16_t idx_200 = statusLine.indexOf("200");
+        uint16_t idx_201 = statusLine.indexOf("201");
 
-        if (success == false)
+        bool success = false;
+
+        if (idx_200 >= 0 || idx_201 >= 0)
         {
-            success = statusLine.indexOf("201") > 0;
-        }   
+            success = true;
+        }
+        else
+        {
+            success = false;
+        }
 
         Serial.print(" -> ");
         Serial.println(success ? "OK" : "FAILED");

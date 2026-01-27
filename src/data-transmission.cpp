@@ -3,6 +3,11 @@
 #include <config.h>
 #include <wifi_handle.h>
 
+double round2(float v)
+{
+    return (double)((int)(v * 100.0 + 0.5)) / 100.0;
+}
+
 DataTransmitter::DataTransmitter()
 {
 }
@@ -32,20 +37,24 @@ bool DataTransmitter::sendData(String devId, float temperature, float humidity, 
 {
     JSONVar doc;
     doc["deviceId"] = devId;
-    doc["temperature"] = temperature;
-    doc["humidity"] = humidity;
-    doc["pressure"] = pressure;
+    doc["temperature"] = round2(temperature);
+    doc["humidity"] = round2(humidity);
+    doc["pressure"] = round2(pressure);
     doc["light"] = light;
-    doc["moisture"] = moisture;
+    doc["moisture"] = round2(moisture);
     String json = JSON.stringify(doc);
+
+    Serial.println(json);
 
     String postResponse;
 
-    if (wifi_HttpPost("/Data/sensorData", json, postResponse, SERVER_IP, DASHBOARD_PORT))
+    if (wifi_HttpPost("/Data/sensorData", json, postResponse, SERVER_IP, DB_API_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
-        if (String((const char*) res["state"]) == devId)
+        Serial.println(String((const char*) res["deviceId"]));
+
+        if (String((const char*) res["deviceId"]) == devId)
         {
             return true;
         }
