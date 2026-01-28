@@ -3,24 +3,24 @@
 #include <carrier_utilities.h>
 #include <config.h>
 
-CarrierUtilities* _carrUtil;
+CarrierUtilities* _wifi_carrUtil;
 WiFiClient client;
 
 bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs) 
 {
-    _carrUtil = &carrUtil;
+    _wifi_carrUtil = &carrUtil;
 
     uint8_t retries = 3;
     bool connected = false;
 
     for (uint8_t i = 0; i < retries; i++)
     {
-        _carrUtil->Display_Fill(ST7735_BLACK);
-        _carrUtil->Display_PrintLn("Connecting to WIFI", 50, 60, 1, ST7735_WHITE);
-        _carrUtil->Display_Print("SSID: ", 50, 90, 1, ST7735_WHITE);
-        _carrUtil->Display_PrintLn(WIFI_SSID, 100, 90, 1, ST7735_WHITE);
-        _carrUtil->Display_Print("PASS: ", 50, 100, 1, ST7735_WHITE);
-        _carrUtil->Display_PrintLn(WIFI_PASS, 100, 100, 1, ST7735_WHITE);
+        _wifi_carrUtil->Display_Fill(ST7735_BLACK);
+        _wifi_carrUtil->Display_PrintLn("Connecting to WIFI", 50, 60, 1, ST7735_WHITE);
+        _wifi_carrUtil->Display_Print("SSID: ", 50, 90, 1, ST7735_WHITE);
+        _wifi_carrUtil->Display_PrintLn(WIFI_SSID, 100, 90, 1, ST7735_WHITE);
+        _wifi_carrUtil->Display_Print("PASS: ", 50, 100, 1, ST7735_WHITE);
+        _wifi_carrUtil->Display_PrintLn(WIFI_PASS, 100, 100, 1, ST7735_WHITE);
 
         WiFi.begin(WIFI_SSID, WIFI_PASS);
         int startMs = millis();
@@ -28,15 +28,15 @@ bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs)
         while (millis() - startMs <= timeoutMs)
         {
             delay(timeoutMs / 40);
-            _carrUtil->Display_PrintDefault(".", 1, ST7735_WHITE);
+            _wifi_carrUtil->Display_PrintDefault(".", 1, ST7735_WHITE);
 
             if (WiFi.status() == WL_CONNECTED) 
             {
                 connected = true;
                 Serial.println("WIFI Connection: OK");
                 Serial.println(WiFi.localIP().toString());
-                _carrUtil->Display_PrintLn("WIFI Connection: OK", 50, 110, 1, ST7735_GREEN);
-                _carrUtil->Display_PrintLn(WiFi.localIP().toString(), 50, 130, 1, ST7735_WHITE);
+                _wifi_carrUtil->Display_PrintLn("WIFI Connection: OK", 50, 110, 1, ST7735_GREEN);
+                _wifi_carrUtil->Display_PrintLn(WiFi.localIP().toString(), 50, 130, 1, ST7735_WHITE);
                 break;
             }
         }
@@ -47,8 +47,8 @@ bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs)
         }
         else
         {
-            _carrUtil->Display_PrintLn("Failed to connect to WiFi...", 50, 120, 1, ST7735_RED);
-            _carrUtil->Display_PrintLn("Retrying" + String(i + 1) + "/" + String(retries) + "...", 50, 140, 1, ST7735_WHITE);
+            _wifi_carrUtil->Display_PrintLn("Failed to connect to WiFi...", 50, 120, 1, ST7735_RED);
+            _wifi_carrUtil->Display_PrintLn("Retrying" + String(i + 1) + "/" + String(retries) + "...", 50, 140, 1, ST7735_WHITE);
             delay(750);
         }
     }

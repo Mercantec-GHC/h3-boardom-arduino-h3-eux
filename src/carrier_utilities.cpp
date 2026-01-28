@@ -19,6 +19,11 @@ void CarrierUtilities::Display_Fill(uint32_t color)
     _display.fillScreen(color);
 }
 
+void CarrierUtilities::Display_FillRect(uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint32_t color)
+{
+    _display.fillRect(x, y, width, height, color);
+}
+
 void CarrierUtilities::Display_SetCursor(uint8_t x, uint8_t y)
 {
     _display.setCursor(x, y);
