@@ -1,4 +1,4 @@
-#include <data-transmission.h>
+#include <data_transmission.h>
 #include <Arduino_JSON.h>
 #include <config.h>
 #include <wifi_handle.h>
@@ -12,6 +12,27 @@ DataTransmitter::DataTransmitter()
 {
 }
 
+bool DataTransmitter::connectDashboard(String devId)
+{
+    JSONVar doc;
+    doc["deviceId"] = devId;
+    String json = JSON.stringify(doc);
+
+    String postResponse;
+
+    if (wifi_HttpPost("/api/connect", json, postResponse, SERVER_IP, DASHBOARD_PORT))
+    {
+        JSONVar res = JSON.parse(postResponse);
+
+        if ((bool)res["success"])
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool DataTransmitter::sendHeartbeat(String devId)
 {
     JSONVar doc;
@@ -23,6 +44,8 @@ bool DataTransmitter::sendHeartbeat(String devId)
     if (wifi_HttpPost("/api/heartbeat", json, postResponse, SERVER_IP, DASHBOARD_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
+
+        Serial.println(JSON.stringify(res));
 
         if ((bool)res["success"])
         {

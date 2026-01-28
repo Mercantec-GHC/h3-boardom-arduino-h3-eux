@@ -7,7 +7,7 @@ ST0160::ST0160(MKRIoTCarrier& carrier)
 
 bool ST0160::getMoisture(int pin, float& moisture)
 {
-    pinMode(pin, INPUT);
+    pinMode(pin, INPUT_PULLDOWN);
 
     int readVal = analogRead(pin);
     float voltage = readVal * (3.3 / 4095.0);

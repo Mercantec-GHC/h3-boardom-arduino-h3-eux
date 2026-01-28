@@ -4,7 +4,7 @@
 #include <config.h>
 #include <wifi_handle.h>
 
-#include <data-transmission.h>
+#include <data_transmission.h>
 
 #include <bme688.h>
 #include <apds-9960.h>
@@ -123,16 +123,59 @@ void loop()
         if (lastState != DISCONNECTED)
         {
             carrUtil.Display_Fill(COLOR_BLUE);
-            carrUtil.Display_PrintCentered(deviceId, 70, 1, COLOR_WHITE);
+            carrUtil.Display_PrintCentered(deviceId, 40, 1, COLOR_WHITE);
             carrUtil.Display_PrintCentered("DISCONNECTED", 110, 2, COLOR_WHITE);
-            carrUtil.Display_PrintCentered("PRESS (04) TO CONNECT TO:", 140, 1, COLOR_WHITE);
-            carrUtil.Display_PrintCentered(String(SERVER_IP) + ":" + String(DASHBOARD_PORT), 155, 1, COLOR_WHITE);
+            carrUtil.Display_PrintCentered("PRESS (04) TO CONNECT TO:", 150, 1, COLOR_WHITE);
+            carrUtil.Display_PrintCentered(String(SERVER_IP) + ":" + String(DASHBOARD_PORT), 165, 1, COLOR_WHITE);
         }
 
         if (carrUtil.Button_PressDown(TOUCH4))
         {
             carrUtil.Display_Fill(COLOR_BLUE);
-            carrUtil.Display_PrintCentered("CONNECTING...", 110, 2, COLOR_WHITE);
+            carrUtil.Display_PrintCentered("CONNECTING", 110, 2, COLOR_WHITE);
+            
+            if (dataTransmit.connectDashboard(deviceId))
+            {
+                unsigned long startMs = millis();
+                unsigned long lastHbAttemptMs = 0;
+                uint16_t timeoutMs = 20000;
+
+                carrUtil.Display_SetCursor(30, 130);
+
+                while(millis() - startMs < timeoutMs)
+                {
+                    delay(timeoutMs/40);
+
+                    carrUtil.Display_PrintDefault(".", 1, COLOR_WHITE);
+                    
+                    if (millis() - lastHbAttemptMs >= 2500)
+                    {
+                        if (dataTransmit.sendHeartbeat(deviceId)) 
+                        {
+                            state = CONNECTED;
+                            lastHeartbeatMs = now;
+                            return;
+                        }
+
+                        lastHbAttemptMs = millis();
+                    }
+                }
+
+                if (state != CONNECTED)
+                {
+                    Serial.println("Failed to connect - Returning to DISCONNECTED");
+                    lastState = HEARTBEAT_ERROR;
+                    return;
+                }
+            }
+            else
+            {
+                Serial.println("Failed to connect - Returning to DISCONNECTED");
+
+                state = DISCONNECTED;
+                lastState = HEARTBEAT_ERROR;
+                return;
+            }
         }
     }
 
@@ -252,6 +295,15 @@ void loop()
             }
         }
 
+        if (now - lastDataTransmissionMs >= DATA_INTERVAL_MS)
+        {
+            lastDataTransmissionMs = now;
+
+            if (!dataTransmit.sendData(deviceId, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light, sensorData.moisture)) 
+            {
+                state = DATA_ERROR;
+            } 
+        }
     }
 
     if (state == HEARTBEAT_ERROR)
@@ -320,16 +372,6 @@ void loop()
         }
         
     }
-
-    if (now - lastDataTransmissionMs >= DATA_INTERVAL_MS)
-    {
-        lastDataTransmissionMs = now;
-
-        if (!dataTransmit.sendData(deviceId, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light, sensorData.moisture)) 
-        {
-            state = DATA_ERROR;
-        } 
-    }
 }
 
 void writeArrows()
@@ -350,7 +392,15 @@ void updateSensorData()
     bme688.getHumidity(humid);
     bme688.getPressure(pres);
     apds9960.getLight(light);
-    st0160.getMoisture(A0, moist);
+
+    if (USING_ST0160)
+    {
+        st0160.getMoisture(ST0160_PIN, moist);
+    }
+    else
+    {
+        moist = 0.00;
+    }
 
     if (temp != sensorData.temperature || 
         humid != sensorData.humidity || 
