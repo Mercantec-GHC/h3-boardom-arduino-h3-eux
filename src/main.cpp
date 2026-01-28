@@ -4,7 +4,7 @@
 #include <config.h>
 #include <wifi_handle.h>
 
-#include <data-transmission.h>
+#include <data_transmission.h>
 
 #include <bme688.h>
 #include <apds-9960.h>
@@ -123,10 +123,10 @@ void loop()
         if (lastState != DISCONNECTED)
         {
             carrUtil.Display_Fill(COLOR_BLUE);
-            carrUtil.Display_PrintCentered(deviceId, 70, 1, COLOR_WHITE);
+            carrUtil.Display_PrintCentered(deviceId, 40, 1, COLOR_WHITE);
             carrUtil.Display_PrintCentered("DISCONNECTED", 110, 2, COLOR_WHITE);
-            carrUtil.Display_PrintCentered("PRESS (04) TO CONNECT TO:", 140, 1, COLOR_WHITE);
-            carrUtil.Display_PrintCentered(String(SERVER_IP) + ":" + String(DASHBOARD_PORT), 155, 1, COLOR_WHITE);
+            carrUtil.Display_PrintCentered("PRESS (04) TO CONNECT TO:", 150, 1, COLOR_WHITE);
+            carrUtil.Display_PrintCentered(String(SERVER_IP) + ":" + String(DASHBOARD_PORT), 165, 1, COLOR_WHITE);
         }
 
         if (carrUtil.Button_PressDown(TOUCH4))
@@ -138,7 +138,7 @@ void loop()
             {
                 unsigned long startMs = millis();
                 unsigned long lastHbAttemptMs = 0;
-                int timeoutMs = 20000;
+                uint16_t timeoutMs = 20000;
 
                 carrUtil.Display_SetCursor(30, 130);
 
@@ -154,8 +154,9 @@ void loop()
                         {
                             state = CONNECTED;
                             lastHeartbeatMs = now;
-                            break;
+                            return;
                         }
+
                         lastHbAttemptMs = millis();
                     }
                 }
@@ -391,7 +392,15 @@ void updateSensorData()
     bme688.getHumidity(humid);
     bme688.getPressure(pres);
     apds9960.getLight(light);
-    st0160.getMoisture(A0, moist);
+
+    if (USING_ST0160)
+    {
+        st0160.getMoisture(ST0160_PIN, moist);
+    }
+    else
+    {
+        moist = 0.00;
+    }
 
     if (temp != sensorData.temperature || 
         humid != sensorData.humidity || 
