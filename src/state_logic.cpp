@@ -38,7 +38,6 @@ void writeArrows()
 void writeRemainingTime()
 {
     uint8_t secondsRemaining = (DATA_INTERVAL_MS - (millis() - lastdataTransmissionMs)) / 1000;
-
         
     _carrUtil->Display_FillRect(0, 140, 240, 10, COLOR_DARK_GREEN);
     _carrUtil->Display_PrintCentered("SENDING DATA IN: " + String(secondsRemaining) + " SECONDS", 140, 1, COLOR_WHITE);
