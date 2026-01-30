@@ -87,6 +87,8 @@ Below is an overview of the states used in the system.
 - The device enters this state if it suddenly loses WiFi connection
 - User can press a button to retry connection
 
+---
+
 ### `ERROR`
 **Purpose:**  
 - This state is for any other error
