@@ -5,6 +5,7 @@ enum DeviceState {
     CONNECTED,
     HEARTBEAT_ERROR,
     DATA_ERROR,
+    WIFI_ERROR,
     ERROR,
 };
 

@@ -10,10 +10,15 @@ bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs)
 {
     _wifi_carrUtil = &carrUtil;
 
+    return wifi_Connect(timeoutMs);
+}
+
+bool wifi_Connect(uint16_t timeoutMs)
+{
     uint8_t retries = 3;
     bool connected = false;
 
-    for (uint8_t i = 0; i < retries; i++)
+     for (uint8_t i = 0; i < retries; i++)
     {
         _wifi_carrUtil->Display_Fill(ST7735_BLACK);
         _wifi_carrUtil->Display_PrintLn("Connecting to WIFI", 50, 60, 1, ST7735_WHITE);
@@ -52,8 +57,6 @@ bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs)
             delay(750);
         }
     }
-
-    delay(1000);
 
     return connected;
 }

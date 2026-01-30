@@ -32,6 +32,7 @@ bool updateScreen = true;
 bool hasRun = false;
 
 unsigned long lastDataTransmissionMs = 0;
+unsigned long lastWifiCheckMs = 0;
 
 void setup() 
 {
@@ -98,7 +99,22 @@ void loop()
         state = handleDataError(sensorData);
     }
 
+    if (state == WIFI_ERROR)
+    {
+        state = handleWifiError();
+    }
+
     saveLastState(state);
+
+    if (now - lastWifiCheckMs >= WIFI_CHECK_INTERVAL_MS)
+    {
+        if (!wifi_IsConnected())
+        {
+            state = WIFI_ERROR;
+        }
+
+        lastWifiCheckMs = now;
+    }    
 
     if (now - lastSensorUpdateMs >= 2500)
     {

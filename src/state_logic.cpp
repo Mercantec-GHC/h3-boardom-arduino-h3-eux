@@ -1,6 +1,7 @@
 #include <state_logic.h>
 #include <config.h>
 #include <data_transmission.h>
+#include <wifi_handle.h>
 
 DataTransmitter _dataTransmit;
 
@@ -251,7 +252,7 @@ DeviceState handleHeartbeatError(unsigned long now)
         _carrUtil->Display_Fill(COLOR_RED);
         _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("HEARTBEAT ERROR", 110, 2, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered("PRESS 02 TO RETRY", 130, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("PRESS (02) TO RETRY", 130, 1, COLOR_WHITE);
     }
 
     if (_carrUtil->Button_PressDown(TOUCH2))
@@ -264,11 +265,9 @@ DeviceState handleHeartbeatError(unsigned long now)
             lastHeartbeatMs = now;
             return CONNECTED;
         }
-        else
-        {
-            return HEARTBEAT_ERROR;
-        }
     }
+
+    return HEARTBEAT_ERROR;
 }
 
 DeviceState handleDataError(SensorData sensorData)
@@ -281,7 +280,7 @@ DeviceState handleDataError(SensorData sensorData)
         _carrUtil->Display_PrintCentered("PRESS (02) TO RETRY", 130, 1, COLOR_WHITE);
     }
 
-    if (_carrUtil->Button_PressDown(TOUCH3))
+    if (_carrUtil->Button_PressDown(TOUCH2))
     {
         _carrUtil->Display_Fill(COLOR_BLUE);
         _carrUtil->Display_PrintCentered("RETRYING DATA TRANSMISSION", 110, 2, COLOR_WHITE);
@@ -290,10 +289,29 @@ DeviceState handleDataError(SensorData sensorData)
         {
             return CONNECTED;
         }
-        else
-        {
-            return DATA_ERROR;
-        } 
     }
+
+    return DATA_ERROR;
+}
+
+DeviceState handleWifiError()
+{
+    if (lastState != WIFI_ERROR)
+    {
+        _carrUtil->Display_Fill(COLOR_RED);
+        _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("WIFI CONNECTION LOST", 110, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("PRESS (02) TO RETRY WIFI CONNECTION", 130, 1, COLOR_WHITE);
+    }
+
+    if (_carrUtil->Button_PressDown(TOUCH2))
+    {
+        if (wifi_Connect(3500))
+        {
+            return CONNECTED;
+        }
+    }
+
+    return WIFI_ERROR;
 }
 

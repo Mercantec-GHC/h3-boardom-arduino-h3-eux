@@ -11,3 +11,4 @@ DeviceState handleDisconnected(unsigned long now);
 DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned long now);
 DeviceState handleHeartbeatError(unsigned long now);
 DeviceState handleDataError(SensorData sensorData);
+DeviceState handleWifiError();

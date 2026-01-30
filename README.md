@@ -31,6 +31,7 @@ const uint16_t DASHBOARD_PORT = 0;
 const uint16_t DB_API_PORT = 0;
 
 const uint32_t DATA_INTERVAL_MS = 30000; // Every 30 seconds
+const uint32_t WIFI_CHECK_INTERVAL_MS = 60000; // Every 60 seconds
 
 const bool USING_ST0160 = false;
 const uint8_t ST0160_PIN = A0;
@@ -80,6 +81,11 @@ Below is an overview of the states used in the system.
 - User can press a button to retry the data transmission
 
 ---
+
+### `WIFI_ERROR`
+**Purpose:**
+- The device enters this state if it suddenly loses WiFi connection
+- User can press a button to retry connection
 
 ### `ERROR`
 **Purpose:**  
