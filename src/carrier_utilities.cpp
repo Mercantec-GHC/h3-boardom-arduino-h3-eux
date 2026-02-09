@@ -2,10 +2,20 @@
 #include <Arduino_MKRIoTCarrier.h>
 #include "carrier_utilities.h"
 
-CarrierUtilities::CarrierUtilities(MKRIoTCarrier& carrier)
-    : _carrier(carrier),
-      _display(carrier.display)
+MKRIoTCarrier CarrierUtilities::_carrier;
+
+CarrierUtilities::CarrierUtilities(bool usingCase)
+      :_display(_carrier.display)
 {
+    usingCase ? _carrier.withCase() : _carrier.noCase();
+    _carrier.begin();
+}
+
+// ------------------ Misc ------------------
+
+MKRIoTCarrier& CarrierUtilities::Get_Carrier()
+{
+    return _carrier;
 }
 
 // ------------------ Display Utilities ------------------

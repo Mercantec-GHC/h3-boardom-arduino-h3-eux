@@ -14,11 +14,10 @@
 
 void updateSensorData();
 
-MKRIoTCarrier carrier;
-CarrierUtilities carrUtil(carrier);
-BME688 bme688(carrier);
-APDS_9960 apds9960(carrier);
-ST0160 st0160(carrier);
+CarrierUtilities carrUtil(USING_CARRIER_CASE);
+BME688 bme688(carrUtil.Get_Carrier());
+APDS_9960 apds9960(carrUtil.Get_Carrier());
+ST0160 st0160(carrUtil.Get_Carrier());
 
 String deviceId;
 
@@ -37,10 +36,6 @@ unsigned long lastWifiCheckMs = 0;
 void setup() 
 {
     Serial.begin(9600);
-
-    USING_CARRIER_CASE ? carrier.withCase() : carrier.noCase();
-
-    carrier.begin();
 
     carrUtil.Display_SetRotation(ROTATION_0);
 

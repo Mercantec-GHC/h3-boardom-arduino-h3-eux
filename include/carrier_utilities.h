@@ -25,7 +25,10 @@ enum Colors {
 
 class CarrierUtilities {
 public:
-    CarrierUtilities(MKRIoTCarrier& carrier);
+    CarrierUtilities(bool usingCase);
+
+    // ------ Misc ------
+    MKRIoTCarrier& Get_Carrier();
 
     // ------ Display Utilities ------
     Adafruit_ST7789& Display();
@@ -49,7 +52,7 @@ public:
     bool Button_PressDown(touchButtons button);
 
 private:
-    MKRIoTCarrier& _carrier;
+    static MKRIoTCarrier _carrier;
     Adafruit_ST7789& _display;
 
     const uint8_t _displayW = 240;
