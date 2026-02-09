@@ -38,7 +38,7 @@ void writeArrows()
 
 void writeRemainingTime()
 {
-    uint8_t secondsRemaining = (DATA_INTERVAL_MS - (millis() - lastdataTransmissionMs)) / 1000;
+    uint16_t secondsRemaining = (DATA_INTERVAL_MS - (millis() - lastdataTransmissionMs)) / 1000;
         
     _carrUtil->Display_FillRect(0, 140, 240, 10, COLOR_DARK_GREEN);
     _carrUtil->Display_PrintCentered("SENDING DATA IN: " + String(secondsRemaining) + " SECONDS", 140, 1, COLOR_WHITE);
@@ -260,7 +260,7 @@ DeviceState handleHeartbeatError(unsigned long now)
         _carrUtil->Display_Fill(COLOR_BLUE);
         _carrUtil->Display_PrintCentered("RETRYING HEARTBEAT", 105, 2, COLOR_WHITE);
 
-        if (!_dataTransmit.sendHeartbeat(_devId))
+        if (_dataTransmit.sendHeartbeat(_devId))
         {
             lastHeartbeatMs = now;
             return CONNECTED;
