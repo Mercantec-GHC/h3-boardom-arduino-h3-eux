@@ -59,7 +59,7 @@ DeviceState handleInitialHeartbeat()
     return DISCONNECTED;
 }
 
-DeviceState handleDisconnected(unsigned long now)
+DeviceState handleDisconnected()
 {
     if (lastState != DISCONNECTED)
     {

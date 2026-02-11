@@ -4,14 +4,19 @@
 
 MKRIoTCarrier CarrierUtilities::_carrier;
 
-CarrierUtilities::CarrierUtilities(bool usingCase)
+CarrierUtilities::CarrierUtilities()
       :_display(_carrier.display)
+{
+
+}
+
+// ------------------ Misc ------------------
+
+void CarrierUtilities::Init(bool usingCase)
 {
     usingCase ? _carrier.withCase() : _carrier.noCase();
     _carrier.begin();
 }
-
-// ------------------ Misc ------------------
 
 MKRIoTCarrier& CarrierUtilities::Get_Carrier()
 {

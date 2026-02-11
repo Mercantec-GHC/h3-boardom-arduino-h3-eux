@@ -25,9 +25,10 @@ enum Colors {
 
 class CarrierUtilities {
 public:
-    CarrierUtilities(bool usingCase);
+    CarrierUtilities();
 
     // ------ Misc ------
+    void Init(bool usingCase);
     MKRIoTCarrier& Get_Carrier();
 
     // ------ Display Utilities ------

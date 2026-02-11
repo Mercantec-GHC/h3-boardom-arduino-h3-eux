@@ -14,10 +14,10 @@
 
 void updateSensorData();
 
-CarrierUtilities carrUtil(USING_CARRIER_CASE);
-BME688 bme688(carrUtil.Get_Carrier());
-APDS_9960 apds9960(carrUtil.Get_Carrier());
-ST0160 st0160(carrUtil.Get_Carrier());
+CarrierUtilities carrUtil;
+BME688* bme688;
+APDS_9960* apds9960;
+ST0160* st0160;
 
 String deviceId;
 
@@ -36,6 +36,12 @@ unsigned long lastWifiCheckMs = 0;
 void setup() 
 {
     Serial.begin(9600);
+
+    carrUtil.Init(USING_CARRIER_CASE);
+
+    bme688 = new BME688(carrUtil.Get_Carrier());
+    apds9960 = new APDS_9960(carrUtil.Get_Carrier());
+    st0160 = new ST0160(carrUtil.Get_Carrier());
 
     carrUtil.Display_SetRotation(ROTATION_0);
 
@@ -71,7 +77,7 @@ void loop()
 
     if (state == DISCONNECTED) 
     {
-        state = handleDisconnected(now);
+        state = handleDisconnected();
 
         if (state == DISCONNECTED)
         {
@@ -126,14 +132,14 @@ void updateSensorData()
     float moist;
     int light;
 
-    bme688.getTemperature(temp);
-    bme688.getHumidity(humid);
-    bme688.getPressure(pres);
-    apds9960.getLight(light);
+    bme688->getTemperature(temp);
+    bme688->getHumidity(humid);
+    bme688->getPressure(pres);
+    apds9960->getLight(light);
 
     if (USING_ST0160)
     {
-        st0160.getMoisture(ST0160_PIN, moist);
+        st0160->getMoisture(ST0160_PIN, moist);
     }
     else
     {
