@@ -136,32 +136,32 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
         {
             _carrUtil->Display_PrintCentered("ALL DATA", 50, 2, COLOR_WHITE);
             _carrUtil->Display_PrintCentered("TEMP | HUM | PRES | LIGHT", 85, 1, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.temperature, 2) + " C | " + String(sensorData.humidity, 2) + "% | " + String(sensorData.pressure, 2) + " hPa | " + String(sensorData.light), 110, 1, COLOR_WHITE);
+            _carrUtil->Display_PrintCentered(String(sensorData.Temperature, 2) + " C | " + String(sensorData.Humidity, 2) + "% | " + String(sensorData.Pressure, 2) + " hPa | " + String(sensorData.Light), 110, 1, COLOR_WHITE);
             writeArrows();
             writeRemainingTime();
         }
         else if (screen == TEMPERATURE)
         {
             _carrUtil->Display_PrintCentered("TEMPERATURE", 70, 2, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.temperature, 2) + " C", 110, 3, COLOR_WHITE);
+            _carrUtil->Display_PrintCentered(String(sensorData.Temperature, 2) + " C", 110, 3, COLOR_WHITE);
             writeArrows();
         }
         else if (screen == HUMIDITY)
         {
             _carrUtil->Display_PrintCentered("HUMIDITY", 70, 2, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.humidity, 2) + " %", 110, 3, COLOR_WHITE);
+            _carrUtil->Display_PrintCentered(String(sensorData.Humidity, 2) + " %", 110, 3, COLOR_WHITE);
             writeArrows();
         }
         else if (screen == PRESSURE)
         {
             _carrUtil->Display_PrintCentered("PRESSURE", 70, 2, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.pressure, 2) + " hPa", 110, 3, COLOR_WHITE);
+            _carrUtil->Display_PrintCentered(String(sensorData.Pressure, 2) + " hPa", 110, 3, COLOR_WHITE);
             writeArrows();
         }
         else if (screen == LIGHT)
         {
             _carrUtil->Display_PrintCentered("LIGHT", 70, 2, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.light), 110, 3, COLOR_WHITE);
+            _carrUtil->Display_PrintCentered(String(sensorData.Light), 110, 3, COLOR_WHITE);
             writeArrows();
         }
         else if (screen == SETTINGS)
@@ -230,7 +230,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
     {
         lastdataTransmissionMs = now;
 
-        if (!_dataTransmit.sendData(_devId, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light, sensorData.moisture)) 
+        if (!_dataTransmit.sendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture)) 
         {
             return DATA_ERROR;
         }

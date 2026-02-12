@@ -20,9 +20,9 @@ enum DeviceScreen {
 
 typedef struct 
 {
-    float temperature;
-    float humidity;
-    float pressure;
-    float moisture;
-    int light;
+    float Temperature;
+    float Humidity;
+    float Pressure;
+    float Moisture;
+    int Light;
 } SensorData;

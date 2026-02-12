@@ -28,8 +28,6 @@ unsigned long lastSensorUpdateMs = 0;
 
 bool updateScreen = true;
 
-bool hasRun = false;
-
 unsigned long lastDataTransmissionMs = 0;
 unsigned long lastWifiCheckMs = 0;
 
@@ -61,6 +59,7 @@ void setup()
 
     deviceId = wifi_GetDeviceID();
     state_init(carrUtil, deviceId);
+    state = handleInitialHeartbeat();
 }
 
 void loop() 
@@ -68,12 +67,6 @@ void loop()
     delay(100);
 
     unsigned long now = millis();
-
-    if (!hasRun) 
-    {
-        state = handleInitialHeartbeat();
-        hasRun = true;
-    }
 
     if (state == DISCONNECTED) 
     {
@@ -146,18 +139,18 @@ void updateSensorData()
         moist = 0.00;
     }
 
-    if (temp != sensorData.temperature || 
-        humid != sensorData.humidity || 
-        pres != sensorData.pressure || 
-        light != sensorData.light || 
-        moist != sensorData.moisture)
+    if (temp != sensorData.Temperature || 
+        humid != sensorData.Humidity || 
+        pres != sensorData.Pressure || 
+        light != sensorData.Light || 
+        moist != sensorData.Moisture)
     {
         updateScreen = true;
     }
 
-    sensorData.temperature = temp;
-    sensorData.humidity = humid;
-    sensorData.pressure = pres;
-    sensorData.light = light;
-    sensorData.moisture = moist;
+    sensorData.Temperature = temp;
+    sensorData.Humidity = humid;
+    sensorData.Pressure = pres;
+    sensorData.Light = light;
+    sensorData.Moisture = moist;
 }
