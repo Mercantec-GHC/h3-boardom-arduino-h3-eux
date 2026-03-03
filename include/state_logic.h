@@ -7,7 +7,8 @@ void saveLastState(DeviceState newState);
 
 DeviceState handleInitialHeartbeat();
 
-DeviceState handleDisconnected(unsigned long now);
+DeviceState handleDisconnected();
 DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned long now);
 DeviceState handleHeartbeatError(unsigned long now);
 DeviceState handleDataError(SensorData sensorData);
+DeviceState handleWifiError();

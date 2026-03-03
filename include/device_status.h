@@ -5,6 +5,7 @@ enum DeviceState {
     CONNECTED,
     HEARTBEAT_ERROR,
     DATA_ERROR,
+    WIFI_ERROR,
     ERROR,
 };
 
@@ -15,13 +16,14 @@ enum DeviceScreen {
     PRESSURE,
     LIGHT,
     SETTINGS,
+    CONFIRM_DISCONNECT,
 };
 
 typedef struct 
 {
-    float temperature;
-    float humidity;
-    float pressure;
-    float moisture;
-    int light;
+    float Temperature;
+    float Humidity;
+    float Pressure;
+    float Moisture;
+    int Light;
 } SensorData;

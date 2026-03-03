@@ -14,11 +14,10 @@
 
 void updateSensorData();
 
-MKRIoTCarrier carrier;
-CarrierUtilities carrUtil(carrier);
-BME688 bme688(carrier);
-APDS_9960 apds9960(carrier);
-ST0160 st0160(carrier);
+CarrierUtilities carrUtil;
+BME688* bme688;
+APDS_9960* apds9960;
+ST0160* st0160;
 
 String deviceId;
 
@@ -29,17 +28,18 @@ unsigned long lastSensorUpdateMs = 0;
 
 bool updateScreen = true;
 
-bool hasRun = false;
-
 unsigned long lastDataTransmissionMs = 0;
+unsigned long lastWifiCheckMs = 0;
 
 void setup() 
 {
     Serial.begin(9600);
 
-    USING_CARRIER_CASE ? carrier.withCase() : carrier.noCase();
+    carrUtil.Init(USING_CARRIER_CASE);
 
-    carrier.begin();
+    bme688 = new BME688(carrUtil.Get_Carrier());
+    apds9960 = new APDS_9960(carrUtil.Get_Carrier());
+    st0160 = new ST0160(carrUtil.Get_Carrier());
 
     carrUtil.Display_SetRotation(ROTATION_0);
 
@@ -59,6 +59,7 @@ void setup()
 
     deviceId = wifi_GetDeviceID();
     state_init(carrUtil, deviceId);
+    state = handleInitialHeartbeat();
 }
 
 void loop() 
@@ -67,15 +68,9 @@ void loop()
 
     unsigned long now = millis();
 
-    if (!hasRun) 
-    {
-        state = handleInitialHeartbeat();
-        hasRun = true;
-    }
-
     if (state == DISCONNECTED) 
     {
-        state = handleDisconnected(now);
+        state = handleDisconnected();
 
         if (state == DISCONNECTED)
         {
@@ -86,6 +81,11 @@ void loop()
     if (state == CONNECTED)
     {
         state = handleConnected(sensorData, updateScreen, now);
+
+        if (state == DISCONNECTED)
+        {
+            return;
+        }
     }
 
     if (state == HEARTBEAT_ERROR)
@@ -98,7 +98,22 @@ void loop()
         state = handleDataError(sensorData);
     }
 
+    if (state == WIFI_ERROR)
+    {
+        state = handleWifiError();
+    }
+
     saveLastState(state);
+
+    if (now - lastWifiCheckMs >= WIFI_CHECK_INTERVAL_MS)
+    {
+        if (!wifi_IsConnected())
+        {
+            state = WIFI_ERROR;
+        }
+
+        lastWifiCheckMs = now;
+    }    
 
     if (now - lastSensorUpdateMs >= 2500)
     {
@@ -115,32 +130,32 @@ void updateSensorData()
     float moist;
     int light;
 
-    bme688.getTemperature(temp);
-    bme688.getHumidity(humid);
-    bme688.getPressure(pres);
-    apds9960.getLight(light);
+    bme688->getTemperature(temp);
+    bme688->getHumidity(humid);
+    bme688->getPressure(pres);
+    apds9960->getLight(light);
 
     if (USING_ST0160)
     {
-        st0160.getMoisture(ST0160_PIN, moist);
+        st0160->getMoisture(ST0160_PIN, moist);
     }
     else
     {
         moist = 0.00;
     }
 
-    if (temp != sensorData.temperature || 
-        humid != sensorData.humidity || 
-        pres != sensorData.pressure || 
-        light != sensorData.light || 
-        moist != sensorData.moisture)
+    if (temp != sensorData.Temperature || 
+        humid != sensorData.Humidity || 
+        pres != sensorData.Pressure || 
+        light != sensorData.Light || 
+        moist != sensorData.Moisture)
     {
         updateScreen = true;
     }
 
-    sensorData.temperature = temp;
-    sensorData.humidity = humid;
-    sensorData.pressure = pres;
-    sensorData.light = light;
-    sensorData.moisture = moist;
+    sensorData.Temperature = temp;
+    sensorData.Humidity = humid;
+    sensorData.Pressure = pres;
+    sensorData.Light = light;
+    sensorData.Moisture = moist;
 }

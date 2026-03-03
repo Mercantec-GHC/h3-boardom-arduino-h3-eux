@@ -1,6 +1,7 @@
 #include <state_logic.h>
 #include <config.h>
 #include <data_transmission.h>
+#include <wifi_handle.h>
 
 DataTransmitter _dataTransmit;
 
@@ -11,6 +12,7 @@ DeviceState lastState = ERROR;
 
 DeviceScreen screen = ALL;
 DeviceScreen lastScreen = LIGHT;
+DeviceScreen lastDataScreen = ALL;
 
 unsigned long lastdataTransmissionMs = 0;
 
@@ -37,7 +39,7 @@ void writeArrows()
 
 void writeRemainingTime()
 {
-    uint8_t secondsRemaining = (DATA_INTERVAL_MS - (millis() - lastdataTransmissionMs)) / 1000;
+    uint16_t secondsRemaining = (DATA_INTERVAL_MS - (millis() - lastdataTransmissionMs)) / 1000;
         
     _carrUtil->Display_FillRect(0, 140, 240, 10, COLOR_DARK_GREEN);
     _carrUtil->Display_PrintCentered("SENDING DATA IN: " + String(secondsRemaining) + " SECONDS", 140, 1, COLOR_WHITE);
@@ -58,7 +60,7 @@ DeviceState handleInitialHeartbeat()
     return DISCONNECTED;
 }
 
-DeviceState handleDisconnected(unsigned long now)
+DeviceState handleDisconnected()
 {
     if (lastState != DISCONNECTED)
     {
@@ -72,10 +74,15 @@ DeviceState handleDisconnected(unsigned long now)
     if (_carrUtil->Button_PressDown(TOUCH4))
     {
         _carrUtil->Display_Fill(COLOR_BLUE);
-        _carrUtil->Display_PrintCentered("CONNECTING", 110, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("CONNECTING...", 110, 2, COLOR_WHITE);
 
         if (_dataTransmit.connectDashboard(_devId))
         {
+            if (_dataTransmit.sendHeartbeat(_devId))
+            {
+                return CONNECTED;
+            }
+
             unsigned long startMs = millis();
             unsigned long lastHbAttemptMs = 0;
             uint16_t timeoutMs = 20000;
@@ -112,20 +119,13 @@ DeviceState handleDisconnected(unsigned long now)
 
 DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned long now)
 {
-    if (lastState != CONNECTED)
-    {
-        _carrUtil->Display_Fill(COLOR_GREEN);
-        _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered("CONNECTED", 100, 2, COLOR_WHITE);
-    }
-
     if (updateScreen)
     {
-        if (screen == SETTINGS)
+        if (screen == SETTINGS && lastScreen != screen)
         {
             _carrUtil->Display_Fill(COLOR_BLACK);
         }
-        else
+        else if (lastScreen != screen)
         {   
             _carrUtil->Display_Fill(COLOR_DARK_GREEN);
             _carrUtil->Display_PrintCentered("SETTINGS", 20, 1, COLOR_WHITE);
@@ -135,35 +135,35 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
         {
             _carrUtil->Display_PrintCentered("ALL DATA", 50, 2, COLOR_WHITE);
             _carrUtil->Display_PrintCentered("TEMP | HUM | PRES | LIGHT", 85, 1, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.temperature, 2) + " C | " + String(sensorData.humidity, 2) + "% | " + String(sensorData.pressure, 2) + " hPa | " + String(sensorData.light), 110, 1, COLOR_WHITE);
+            _carrUtil->Display_FillPrintCentered(String(sensorData.Temperature, 2) + " C | " + String(sensorData.Humidity, 2) + "% | " + String(sensorData.Pressure, 2) + " hPa | " + String(sensorData.Light), 110, 1, COLOR_WHITE);
             writeArrows();
             writeRemainingTime();
         }
         else if (screen == TEMPERATURE)
         {
             _carrUtil->Display_PrintCentered("TEMPERATURE", 70, 2, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.temperature, 2) + " C", 110, 3, COLOR_WHITE);
+            _carrUtil->Display_FillPrintCentered(String(sensorData.Temperature, 2) + " C", 110, 3, COLOR_WHITE);
             writeArrows();
         }
         else if (screen == HUMIDITY)
         {
             _carrUtil->Display_PrintCentered("HUMIDITY", 70, 2, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.humidity, 2) + " %", 110, 3, COLOR_WHITE);
+            _carrUtil->Display_FillPrintCentered(String(sensorData.Humidity, 2) + " %", 110, 3, COLOR_WHITE);
             writeArrows();
         }
         else if (screen == PRESSURE)
         {
             _carrUtil->Display_PrintCentered("PRESSURE", 70, 2, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.pressure, 2) + " hPa", 110, 3, COLOR_WHITE);
+            _carrUtil->Display_FillPrintCentered(String(sensorData.Pressure, 2) + " hPa", 110, 3, COLOR_WHITE);
             writeArrows();
         }
         else if (screen == LIGHT)
         {
             _carrUtil->Display_PrintCentered("LIGHT", 70, 2, COLOR_WHITE);
-            _carrUtil->Display_PrintCentered(String(sensorData.light), 110, 3, COLOR_WHITE);
+            _carrUtil->Display_FillPrintCentered(String(sensorData.Light), 110, 3, COLOR_WHITE);
             writeArrows();
         }
-        else if (screen == SETTINGS)
+        else if (screen == SETTINGS && lastScreen != SETTINGS)
         {
             _carrUtil->Display_Fill(COLOR_BLACK);
             _carrUtil->Display_PrintCentered("SETTINGS", 30, 2, COLOR_WHITE);
@@ -176,13 +176,27 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
             _carrUtil->Display_Print("WIFI SSID: " + String(WIFI_SSID), 30, 135, 1, COLOR_WHITE);
 
             _carrUtil->Display_Print("<- BACK", 30, 160, 1, COLOR_WHITE);
+            _carrUtil->Display_Print("DISCONNECT ->", 135, 160, 1, COLOR_WHITE);
         }
-
-        if (screen != SETTINGS)
+        else if (screen == CONFIRM_DISCONNECT)
         {
-            lastScreen = screen;
+            _carrUtil->Display_Fill(COLOR_RED);
+            _carrUtil->Display_PrintCentered("CONFIRM", 60, 2, COLOR_WHITE);
+            _carrUtil->Display_PrintCentered("DISCONNECT?", 100, 2, COLOR_WHITE);
+
+
+            _carrUtil->Display_Print("<- CANCEL", 30, 160, 1, COLOR_WHITE);
+            _carrUtil->Display_Print("CONFIRM ->", 150, 160, 1, COLOR_WHITE);
         }
 
+        if (screen != SETTINGS && screen != CONFIRM_DISCONNECT)
+        {
+            lastDataScreen = screen;
+        }
+
+
+        lastScreen = screen;
+        
         updateScreen = false;
     }
 
@@ -190,8 +204,28 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
     {
         if (_carrUtil->Button_PressDown(TOUCH0))
         {
-            screen = lastScreen;
+            screen = lastDataScreen;
             updateScreen = true;
+        }
+
+        if (_carrUtil->Button_PressDown(TOUCH4))
+        {
+            screen = CONFIRM_DISCONNECT;
+            updateScreen = true;
+        }
+    }
+    else if (screen == CONFIRM_DISCONNECT)
+    {
+        if (_carrUtil->Button_PressDown(TOUCH0))
+        {
+            screen = SETTINGS;
+            updateScreen = true;
+        }
+        else if (_carrUtil->Button_PressDown(TOUCH4))
+        {
+            screen = ALL;
+            updateScreen = true;
+            return DISCONNECTED;
         }
     }
     else
@@ -229,7 +263,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
     {
         lastdataTransmissionMs = now;
 
-        if (!_dataTransmit.sendData(_devId, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light, sensorData.moisture)) 
+        if (!_dataTransmit.sendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture)) 
         {
             return DATA_ERROR;
         }
@@ -251,7 +285,7 @@ DeviceState handleHeartbeatError(unsigned long now)
         _carrUtil->Display_Fill(COLOR_RED);
         _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("HEARTBEAT ERROR", 110, 2, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered("PRESS 02 TO RETRY", 130, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("PRESS (02) TO RETRY", 130, 1, COLOR_WHITE);
     }
 
     if (_carrUtil->Button_PressDown(TOUCH2))
@@ -259,16 +293,14 @@ DeviceState handleHeartbeatError(unsigned long now)
         _carrUtil->Display_Fill(COLOR_BLUE);
         _carrUtil->Display_PrintCentered("RETRYING HEARTBEAT", 105, 2, COLOR_WHITE);
 
-        if (!_dataTransmit.sendHeartbeat(_devId))
+        if (_dataTransmit.sendHeartbeat(_devId))
         {
             lastHeartbeatMs = now;
             return CONNECTED;
         }
-        else
-        {
-            return HEARTBEAT_ERROR;
-        }
     }
+
+    return HEARTBEAT_ERROR;
 }
 
 DeviceState handleDataError(SensorData sensorData)
@@ -281,19 +313,38 @@ DeviceState handleDataError(SensorData sensorData)
         _carrUtil->Display_PrintCentered("PRESS (02) TO RETRY", 130, 1, COLOR_WHITE);
     }
 
-    if (_carrUtil->Button_PressDown(TOUCH3))
+    if (_carrUtil->Button_PressDown(TOUCH2))
     {
         _carrUtil->Display_Fill(COLOR_BLUE);
         _carrUtil->Display_PrintCentered("RETRYING DATA TRANSMISSION", 110, 2, COLOR_WHITE);
 
-        if (_dataTransmit.sendData(_devId, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light, sensorData.moisture))
+        if (_dataTransmit.sendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture))
         {
             return CONNECTED;
         }
-        else
-        {
-            return DATA_ERROR;
-        } 
     }
+
+    return DATA_ERROR;
+}
+
+DeviceState handleWifiError()
+{
+    if (lastState != WIFI_ERROR)
+    {
+        _carrUtil->Display_Fill(COLOR_RED);
+        _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("WIFI CONNECTION LOST", 110, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("PRESS (02) TO RETRY WIFI CONNECTION", 130, 1, COLOR_WHITE);
+    }
+
+    if (_carrUtil->Button_PressDown(TOUCH2))
+    {
+        if (wifi_Connect(3500))
+        {
+            return CONNECTED;
+        }
+    }
+
+    return WIFI_ERROR;
 }
 
