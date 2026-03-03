@@ -41,6 +41,7 @@ public:
     void Display_PrintDefault(String text, uint8_t size, uint32_t color);
     void Display_PrintLn(String text, uint8_t x, uint8_t y, uint8_t size, uint32_t color);
     void Display_PrintCentered(String text, uint8_t y, uint8_t size, uint32_t color);
+    void Display_FillPrintCentered(String text, uint8_t y, uint8_t size, uint32_t color);
 
     // ------ LED Utilities ------
     void LED_Set(uint8_t ledIndex, uint32_t color);
@@ -58,4 +59,6 @@ private:
 
     const uint8_t _displayW = 240;
     const uint8_t _displayH = 240;
+
+    uint32_t currentFillColor;
 };

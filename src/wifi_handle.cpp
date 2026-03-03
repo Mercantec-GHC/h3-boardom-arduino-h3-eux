@@ -106,6 +106,8 @@ bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, cons
             return false;
         }
 
+        Serial.println(String(server_ip) + ":" + String(server_port) + String(endpoint));
+
         String constructedPost = "POST " + String(endpoint) + " HTTP/1.1";
 
         Serial.println("-> " + constructedPost);

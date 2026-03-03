@@ -16,6 +16,7 @@ enum DeviceScreen {
     PRESSURE,
     LIGHT,
     SETTINGS,
+    CONFIRM_DISCONNECT,
 };
 
 typedef struct 

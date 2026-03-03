@@ -81,6 +81,11 @@ void loop()
     if (state == CONNECTED)
     {
         state = handleConnected(sensorData, updateScreen, now);
+
+        if (state == DISCONNECTED)
+        {
+            return;
+        }
     }
 
     if (state == HEARTBEAT_ERROR)
