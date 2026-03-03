@@ -70,10 +70,15 @@ String wifi_GetDeviceID()
 {
     byte mac[6];
     WiFi.macAddress(mac);
+
+    byte b1 = mac[0] ^ mac[3];
+    byte b2 = mac[1] ^ mac[4];
+    byte b3 = mac[2] ^ mac[5];
+
     char buf[20];
-    snprintf(buf, sizeof(buf), "OPLA_%02X%02X%02X", mac[3], mac[4], mac[5]);
-    String deviceId = String(buf);
-    return deviceId;
+    snprintf(buf, sizeof(buf), "OPLA_%02X%02X%02X", b1, b2, b3);
+
+    return String(buf);
 }
 
 String readResponseBody()
