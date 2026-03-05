@@ -28,7 +28,7 @@ void state_init(CarrierUtilities& carrUtil, String devId)
     _devId = devId;
 
     randomSeed(analogRead(A6) ^ micros() ^ millis());
-    heartbeatIntervalMs = random(60000, 180000); // Random interval between 1 and 2 minutes
+    heartbeatIntervalMs = random(60000, 180000); // Random interval between 1 and 3 minutes
 }
 
 void writeArrows()
