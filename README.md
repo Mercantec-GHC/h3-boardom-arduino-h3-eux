@@ -26,9 +26,10 @@ const bool USING_CARRIER_CASE = false;
 const char WIFI_SSID[] = "";
 const char WIFI_PASS[] = "";
 
-const char SERVER_IP[] = "";
+const char API_SERVER_IP[] = "";
+const char DASHBOARD_SERVER_IP[] = "";
 const uint16_t DASHBOARD_PORT = 0;
-const uint16_t DB_API_PORT = 0;
+const uint16_t API_PORT = 0;
 
 const uint32_t DATA_INTERVAL_MS = 30000; // Every 30 seconds
 const uint32_t WIFI_CHECK_INTERVAL_MS = 60000; // Every 60 seconds
