@@ -41,7 +41,7 @@ bool DataTransmitter::sendHeartbeat(String devId)
 
     String postResponse;
 
-    if (wifi_HttpPost("/api/heartbeat", json, postResponse, SERVER_IP, DASHBOARD_PORT))
+    if (wifi_HttpPost("/Device/heartbeat", json, postResponse, SERVER_IP, DB_API_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
