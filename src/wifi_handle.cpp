@@ -102,7 +102,6 @@ bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, cons
 
     for (uint8_t i = 0; i < retries; i++)
     {
-        Serial.println("Connecting to server: " + String(server_ip) + ":" + String(server_port));
 
         if (!client.connect(server_ip, server_port))
         {

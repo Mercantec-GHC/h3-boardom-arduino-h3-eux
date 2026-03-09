@@ -20,7 +20,7 @@ bool DataTransmitter::connectDashboard(String devId)
 
     String postResponse;
 
-    if (wifi_HttpPost("/api/connect", json, postResponse, SERVER_IP, DASHBOARD_PORT))
+    if (wifi_HttpPost("/api/connect", json, postResponse, DASHBOARD_SERVER_IP, DASHBOARD_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
@@ -41,7 +41,7 @@ bool DataTransmitter::sendHeartbeat(String devId)
 
     String postResponse;
 
-    if (wifi_HttpPost("/Device/heartbeat", json, postResponse, SERVER_IP, DB_API_PORT))
+    if (wifi_HttpPost("/Device/heartbeat", json, postResponse, API_SERVER_IP, API_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
@@ -71,7 +71,7 @@ bool DataTransmitter::sendData(String devId, float temperature, float humidity, 
 
     String postResponse;
 
-    if (wifi_HttpPost("/Data/sensorData", json, postResponse, SERVER_IP, DB_API_PORT))
+    if (wifi_HttpPost("/Data/sensorData", json, postResponse, API_SERVER_IP, API_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
