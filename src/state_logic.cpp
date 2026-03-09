@@ -66,9 +66,9 @@ DeviceState handleDisconnected()
     {
         _carrUtil->Display_Fill(COLOR_BLUE);
         _carrUtil->Display_PrintCentered(_devId, 40, 1, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered("DISCONNECTED", 110, 2, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered("PRESS (04) TO CONNECT TO:", 150, 1, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered(String(SERVER_IP) + ":" + String(DASHBOARD_PORT), 165, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("DISCONNECTED", 90, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("PRESS (04) TO CONNECT TO:", 130, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered(String(DASHBOARD_SERVER_IP), 145, 1, COLOR_WHITE);
     }
 
     if (_carrUtil->Button_PressDown(TOUCH4))
@@ -171,8 +171,18 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
             _carrUtil->Display_Print("DEVICE ID: " + _devId, 30, 60, 1, COLOR_WHITE);
             _carrUtil->Display_Print("HEARTBEAT: " + String(heartbeatIntervalMs / 1000) + " seconds", 30, 75, 1, COLOR_WHITE);
             _carrUtil->Display_Print("DATA: " + String(DATA_INTERVAL_MS / 1000) + " seconds", 30, 90, 1, COLOR_WHITE);
-            _carrUtil->Display_Print("DASHBOARD: " + String(SERVER_IP) + ":" + String(DASHBOARD_PORT), 30, 105, 1, COLOR_WHITE);
-            _carrUtil->Display_Print("DATABASE: " + String(SERVER_IP) + ":" + String(DB_API_PORT), 30, 120, 1, COLOR_WHITE);
+            
+            if (String(DASHBOARD_SERVER_IP).length() < 20 || String(API_SERVER_IP).length() < 20)
+            {
+                _carrUtil->Display_Print("DASHBOARD: " + String(DASHBOARD_SERVER_IP) + ":" + String(DASHBOARD_PORT), 30, 105, 1, COLOR_WHITE);
+                _carrUtil->Display_Print("DATABASE: " + String(API_SERVER_IP) + ":" + String(API_PORT), 30, 120, 1, COLOR_WHITE);
+            }
+            else
+            {
+                _carrUtil->Display_Print("DASHBOARD: TOO LONG", 30, 105, 1, COLOR_WHITE);
+                _carrUtil->Display_Print("DATABASE: TOO LONG", 30, 120, 1, COLOR_WHITE);
+            }
+
             _carrUtil->Display_Print("WIFI SSID: " + String(WIFI_SSID), 30, 135, 1, COLOR_WHITE);
 
             _carrUtil->Display_Print("<- BACK", 30, 160, 1, COLOR_WHITE);
