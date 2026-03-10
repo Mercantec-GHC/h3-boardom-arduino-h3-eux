@@ -91,11 +91,21 @@ void loop()
     if (state == HEARTBEAT_ERROR)
     {
         state = handleHeartbeatError(now);
+
+        if (state == CONNECTED)
+        {
+            return;
+        }
     }
 
     if (state == DATA_ERROR)
     {
         state = handleDataError(sensorData);
+        
+        if (state == CONNECTED)
+        {
+            return;
+        }
     }
 
     if (state == WIFI_ERROR)
