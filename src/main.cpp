@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Arduino_MKRIoTCarrier.h>
 #include <carrier_utilities.h>
 #include <config.h>
 #include <wifi_handle.h>
