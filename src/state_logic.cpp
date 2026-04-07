@@ -65,7 +65,7 @@ DeviceState handleDisconnected()
     if (lastState != DISCONNECTED)
     {
         _carrUtil->Display_Fill(COLOR_BLUE);
-        _carrUtil->Display_PrintCentered(_devId, 40, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("DISCONNECTED", 90, 2, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("PRESS (04) TO CONNECT TO:", 130, 1, COLOR_WHITE);
         _carrUtil->Display_PrintCentered(String(DASHBOARD_SERVER_IP), 145, 1, COLOR_WHITE);
@@ -74,6 +74,7 @@ DeviceState handleDisconnected()
     if (_carrUtil->Button_PressDown(TOUCH4))
     {
         _carrUtil->Display_Fill(COLOR_BLUE);
+        _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("CONNECTING...", 110, 2, COLOR_WHITE);
 
         if (_dataTransmit.connectDashboard(_devId))
@@ -121,14 +122,17 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
 {
     if (updateScreen)
     {
-        if (screen == SETTINGS && lastScreen != screen)
+        if (lastScreen != screen || lastState == HEARTBEAT_ERROR || lastState == DATA_ERROR)
         {
-            _carrUtil->Display_Fill(COLOR_BLACK);
-        }
-        else if (lastScreen != screen)
-        {   
-            _carrUtil->Display_Fill(COLOR_DARK_GREEN);
-            _carrUtil->Display_PrintCentered("SETTINGS", 20, 1, COLOR_WHITE);
+            if (screen == SETTINGS)
+            {
+                _carrUtil->Display_Fill(COLOR_BLACK);
+            }
+            else
+            {
+                _carrUtil->Display_Fill(COLOR_DARK_GREEN);
+                _carrUtil->Display_PrintCentered("SETTINGS", 20, 1, COLOR_WHITE);
+            }
         }
 
         if (screen == ALL)
@@ -295,18 +299,24 @@ DeviceState handleHeartbeatError(unsigned long now)
         _carrUtil->Display_Fill(COLOR_RED);
         _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("HEARTBEAT ERROR", 110, 2, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered("PRESS (02) TO RETRY", 130, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("PRESS (04) TO RETRY", 130, 1, COLOR_WHITE);
     }
 
-    if (_carrUtil->Button_PressDown(TOUCH2))
+    if (_carrUtil->Button_PressDown(TOUCH4))
     {
-        _carrUtil->Display_Fill(COLOR_BLUE);
+        _carrUtil->Display_Fill(COLOR_RED);
+        _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("RETRYING HEARTBEAT", 105, 2, COLOR_WHITE);
 
         if (_dataTransmit.sendHeartbeat(_devId))
         {
             lastHeartbeatMs = now;
             return CONNECTED;
+        }
+        else
+        {
+            lastState = ERROR;
+            handleHeartbeatError(now);
         }
     }
 
@@ -318,19 +328,27 @@ DeviceState handleDataError(SensorData sensorData)
     if (lastState != DATA_ERROR)
     {
         _carrUtil->Display_Fill(COLOR_RED);
-        _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered("DATA TRANSMISSION FAILED", 110, 2, COLOR_WHITE);
-        _carrUtil->Display_PrintCentered("PRESS (02) TO RETRY", 130, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("DATA TRANSMISSION", 110, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("FAILED", 130, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("PRESS (04) TO RETRY", 185, 1, COLOR_WHITE);
     }
 
-    if (_carrUtil->Button_PressDown(TOUCH2))
+    if (_carrUtil->Button_PressDown(TOUCH4))
     {
-        _carrUtil->Display_Fill(COLOR_BLUE);
-        _carrUtil->Display_PrintCentered("RETRYING DATA TRANSMISSION", 110, 2, COLOR_WHITE);
+        _carrUtil->Display_Fill(COLOR_RED);
+        _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("RETRYING DATA", 110, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("TRANSMISSION", 130, 2, COLOR_WHITE);
 
         if (_dataTransmit.sendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture))
         {
             return CONNECTED;
+        }
+        else
+        {
+            lastState = ERROR;
+            handleDataError(sensorData);
         }
     }
 

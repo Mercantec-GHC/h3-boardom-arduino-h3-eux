@@ -93,6 +93,7 @@ void loop()
 
         if (state == CONNECTED)
         {
+            updateScreen = true;
             return;
         }
     }
@@ -103,6 +104,7 @@ void loop()
         
         if (state == CONNECTED)
         {
+            updateScreen = true;
             return;
         }
     }
