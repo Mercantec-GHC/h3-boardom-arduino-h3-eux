@@ -139,3 +139,67 @@ bool CarrierUtilities::Button_PressDown(touchButtons button)
     return _carrier.Buttons.onTouchDown(button);
 }
 
+// -------------------- SD Utilities --------------------
+
+bool CarrierUtilities::SD_Write(const char* fileName, String data)
+{
+    if (!fileName || fileName[0] == '\0')
+    {
+        return false;
+    }
+
+    File f = SD.open(fileName, FILE_WRITE);
+
+    if (!f) 
+    {
+        return false;
+    }
+
+    size_t written = f.print(data);
+
+    f.close();
+
+    return written == data.length();
+
+}
+
+bool CarrierUtilities::SD_WriteOver(const char* fileName, String data)
+{
+    if (!fileName || fileName[0] == '\0')
+    {
+        return false;
+    }
+
+    if (SD.exists(fileName))
+    {
+        SD.remove(fileName);
+    }
+
+    return SD_Write(fileName, data);
+}
+
+String CarrierUtilities::SD_Read(const char* fileName)
+{
+    if (!fileName || fileName[0] == '\0')
+    {
+        return "";
+    }
+
+    File f = SD.open(fileName, FILE_READ);
+
+    if (!f)
+    {
+        return "";
+    }
+
+    String out;
+
+    while (f.available())
+    {
+        out += (char)f.read();
+    }
+
+    f.close();
+
+    return out;
+}   

@@ -4,11 +4,13 @@
 #include <config.h>
 
 CarrierUtilities* _wifi_carrUtil;
-WiFiClient client;
+WiFiClient _client;
+String _jwtToken;
 
-bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs) 
+bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs, String jwtToken) 
 {
     _wifi_carrUtil = &carrUtil;
+    _jwtToken = jwtToken;
 
     return wifi_Connect(timeoutMs);
 }
@@ -83,9 +85,9 @@ String wifi_GetDeviceID()
 
 String readResponseBody()
 {
-    while (client.connected())
+    while (_client.connected())
     {
-        String line = client.readStringUntil('\n');
+        String line = _client.readStringUntil('\n');
 
         if (line == "\r" || line.length() == 0) 
         {
@@ -93,7 +95,7 @@ String readResponseBody()
         }
     }
 
-    return client.readString();
+    return _client.readString();
 }
 
 bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, const char* server_ip, uint16_t server_port)
@@ -103,7 +105,7 @@ bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, cons
     for (uint8_t i = 0; i < retries; i++)
     {
 
-        if (!client.connect(server_ip, server_port))
+        if (!_client.connect(server_ip, server_port))
         {
             Serial.println(" -> FAILED");
             delay(750);
@@ -116,19 +118,25 @@ bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, cons
 
         Serial.println("-> " + constructedPost);
 
-        client.println(constructedPost);
-        client.println("Host: " + String(server_ip));
-        client.println("Content-Type: application/json");
-        client.print("Content-Length: ");
-        client.println(jsonBody.length());
-        client.println("Connection: close");
-        client.println();
-        client.print(jsonBody);
+        _client.println(constructedPost);
+        _client.println("Host: " + String(server_ip));
+        _client.println("Content-Type: application/json");
 
-        String statusLine = client.readStringUntil('\n');
+        if (_jwtToken.length() > 0)
+        {
+            _client.println("Authorization: Bearer " + _jwtToken);
+        }
+
+        _client.print("Content-Length: ");
+        _client.println(jsonBody.length());
+        _client.println("Connection: close");
+        _client.println();
+        _client.print(jsonBody);
+
+        String statusLine = _client.readStringUntil('\n');
         response = readResponseBody();
         Serial.println(response);
-        client.stop();
+        _client.stop();
 
         int jsonStart = response.indexOf('{');
 

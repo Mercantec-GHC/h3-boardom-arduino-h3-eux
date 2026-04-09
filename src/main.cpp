@@ -35,14 +35,13 @@ void setup()
     Serial.begin(9600);
 
     carrUtil.Init(USING_CARRIER_CASE);
+    carrUtil.Display_SetRotation(ROTATION_0);
 
     bme688 = new BME688(carrUtil.Get_Carrier());
     apds9960 = new APDS_9960(carrUtil.Get_Carrier());
     st0160 = new ST0160(carrUtil.Get_Carrier());
 
-    carrUtil.Display_SetRotation(ROTATION_0);
-
-    while (!wifi_Init(carrUtil, 3500)) 
+    while (!wifi_Init(carrUtil, 3500, carrUtil.SD_Read("jwt.txt"))) 
     {
         carrUtil.Display_Fill(ST7735_RED);
         carrUtil.Display_PrintCentered("WIFI FAILED", 100, 2, ST7735_WHITE);
