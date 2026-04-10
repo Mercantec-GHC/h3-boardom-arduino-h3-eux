@@ -141,6 +141,32 @@ bool CarrierUtilities::Button_PressDown(touchButtons button)
 
 // -------------------- SD Utilities --------------------
 
+bool CarrierUtilities::SD_Delete(const char* fileName)
+{
+    if (!fileName || fileName[0] == '\0')
+    {
+        return false;
+    }
+
+    if (SD.exists(fileName))
+    {
+        SD.remove(fileName);
+        
+        if (!SD.exists(fileName))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return true;
+    }
+}
+
 bool CarrierUtilities::SD_Write(const char* fileName, String data)
 {
     if (!fileName || fileName[0] == '\0')
@@ -165,14 +191,9 @@ bool CarrierUtilities::SD_Write(const char* fileName, String data)
 
 bool CarrierUtilities::SD_WriteOver(const char* fileName, String data)
 {
-    if (!fileName || fileName[0] == '\0')
+    if (!SD_Delete(fileName))
     {
         return false;
-    }
-
-    if (SD.exists(fileName))
-    {
-        SD.remove(fileName);
     }
 
     return SD_Write(fileName, data);

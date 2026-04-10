@@ -54,6 +54,7 @@ public:
     bool Button_PressDown(touchButtons button);
 
     // ------ SD Utilities ------
+    bool SD_Delete(const char* fileName);
     bool SD_Write(const char* fileName, String data);
     bool SD_WriteOver(const char* fileName, String data);
     String SD_Read(const char* fileName);
