@@ -67,5 +67,5 @@ private:
     const uint8_t _displayW = 240;
     const uint8_t _displayH = 240;
 
-    uint32_t currentFillColor;
+    uint32_t _currentFillColor;
 };

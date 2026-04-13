@@ -32,7 +32,7 @@ Adafruit_ST7789& CarrierUtilities::Display() {
 void CarrierUtilities::Display_Fill(uint32_t color)
 {
     _display.fillScreen(color);
-    currentFillColor = color;
+    _currentFillColor = color;
 }
 
 void CarrierUtilities::Display_FillRect(uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint32_t color)
@@ -92,7 +92,7 @@ void CarrierUtilities::Display_FillPrintCentered(String text, uint8_t y, uint8_t
 {
     uint8_t height = 8 * size;
 
-    Display_FillRect(0, y, _displayW, height, currentFillColor);
+    Display_FillRect(0, y, _displayW, height, _currentFillColor);
     Display_PrintCentered(text, y, size, color);
 }
 

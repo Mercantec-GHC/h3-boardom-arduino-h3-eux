@@ -5,21 +5,21 @@
 
 DataTransmitter _dataTransmit;
 
-uint32_t heartbeatIntervalMs = 100000;
-unsigned long lastHeartbeatMs = 0;
+uint32_t _heartbeatIntervalMs = 100000;
+unsigned long _lastHeartbeatMs = 0;
 
-DeviceState lastState = ERROR;
+DeviceState _lastState = ERROR;
 
-DeviceScreen screen = ALL;
-DeviceScreen lastScreen = LIGHT;
-DeviceScreen lastDataScreen = ALL;
+DeviceScreen _screen = ALL;
+DeviceScreen _lastScreen = LIGHT;
+DeviceScreen _lastDataScreen = ALL;
 
-unsigned long lastdataTransmissionMs = 0;
+unsigned long _lastdataTransmissionMs = 0;
 
-const char* jwtFilename = "jwt.txt";
+const char* _jwtFilename = "jwt.txt";
 
-uint16_t timeUpdateMs = 1000;
-unsigned long lastTimeUpdateMs = 0;
+uint16_t _timeUpdateMs = 1000;
+unsigned long _lastTimeUpdateMs = 0;
 
 CarrierUtilities* _carrUtil;
 String _devId;
@@ -30,7 +30,7 @@ void state_init(CarrierUtilities& carrUtil, String devId)
     _devId = devId;
 
     randomSeed(analogRead(A6) ^ micros() ^ millis());
-    heartbeatIntervalMs = random(60000, 180000); // Random interval between 1 and 3 minutes
+    _heartbeatIntervalMs = random(60000, 180000); // Random interval between 1 and 3 minutes
 }
 
 void writeArrows()
@@ -41,7 +41,7 @@ void writeArrows()
 
 DeviceState handleToken()
 {
-    String token = _carrUtil->SD_Read(jwtFilename);
+    String token = _carrUtil->SD_Read(_jwtFilename);
 
     if (token.length() > 0)
     {
@@ -54,7 +54,7 @@ DeviceState handleToken()
 
 void writeRemainingTime()
 {
-    uint16_t secondsRemaining = (DATA_INTERVAL_MS - (millis() - lastdataTransmissionMs)) / 1000;
+    uint16_t secondsRemaining = (DATA_INTERVAL_MS - (millis() - _lastdataTransmissionMs)) / 1000;
         
     _carrUtil->Display_FillRect(0, 140, 240, 10, COLOR_DARK_GREEN);
     _carrUtil->Display_PrintCentered("SENDING DATA IN: " + String(secondsRemaining) + " SECONDS", 140, 1, COLOR_WHITE);
@@ -62,7 +62,7 @@ void writeRemainingTime()
 
 void saveLastState(DeviceState newState)
 {
-    lastState = newState;
+    _lastState = newState;
 }
 
 DeviceState handleStartup()
@@ -84,7 +84,7 @@ DeviceState handleStartup()
 
 DeviceState handleRetrieveToken(String* outToken)
 {
-    String token = _carrUtil->SD_Read(jwtFilename);
+    String token = _carrUtil->SD_Read(_jwtFilename);
 
     if (token.length() < 1)
     {
@@ -98,7 +98,7 @@ DeviceState handleRetrieveToken(String* outToken)
 
 DeviceState handleDisconnected()
 {
-    if (lastState != DISCONNECTED)
+    if (_lastState != DISCONNECTED)
     {
         _carrUtil->Display_Fill(COLOR_BLUE);
         _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
@@ -142,11 +142,11 @@ DeviceState handleDisconnected()
                 lastHbAttemptMs = startMs;
             }
             
-            lastState = HEARTBEAT_ERROR; // Just something other than DISCONNECTED
+            _lastState = HEARTBEAT_ERROR; // Just something other than DISCONNECTED
             return DISCONNECTED;
         }
         
-        lastState = HEARTBEAT_ERROR; // Just something other than DISCONNECTED
+        _lastState = HEARTBEAT_ERROR; // Just something other than DISCONNECTED
         return DISCONNECTED;
     }
 
@@ -158,9 +158,9 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
 {
     if (updateScreen)
     {
-        if (lastScreen != screen || lastState == HEARTBEAT_ERROR || lastState == DATA_ERROR)
+        if (_lastScreen != _screen || _lastState == HEARTBEAT_ERROR || _lastState == DATA_ERROR)
         {
-            if (screen == SETTINGS)
+            if (_screen == SETTINGS)
             {
                 _carrUtil->Display_Fill(COLOR_BLACK);
             }
@@ -171,7 +171,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
             }
         }
 
-        if (screen == ALL)
+        if (_screen == ALL)
         {
             _carrUtil->Display_PrintCentered("ALL DATA", 50, 2, COLOR_WHITE);
             _carrUtil->Display_PrintCentered("TEMP | HUM | PRES | LIGHT", 85, 1, COLOR_WHITE);
@@ -179,37 +179,37 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
             writeArrows();
             writeRemainingTime();
         }
-        else if (screen == TEMPERATURE)
+        else if (_screen == TEMPERATURE)
         {
             _carrUtil->Display_PrintCentered("TEMPERATURE", 70, 2, COLOR_WHITE);
             _carrUtil->Display_FillPrintCentered(String(sensorData.Temperature, 2) + " C", 110, 3, COLOR_WHITE);
             writeArrows();
         }
-        else if (screen == HUMIDITY)
+        else if (_screen == HUMIDITY)
         {
             _carrUtil->Display_PrintCentered("HUMIDITY", 70, 2, COLOR_WHITE);
             _carrUtil->Display_FillPrintCentered(String(sensorData.Humidity, 2) + " %", 110, 3, COLOR_WHITE);
             writeArrows();
         }
-        else if (screen == PRESSURE)
+        else if (_screen == PRESSURE)
         {
             _carrUtil->Display_PrintCentered("PRESSURE", 70, 2, COLOR_WHITE);
             _carrUtil->Display_FillPrintCentered(String(sensorData.Pressure, 2) + " hPa", 110, 3, COLOR_WHITE);
             writeArrows();
         }
-        else if (screen == LIGHT)
+        else if (_screen == LIGHT)
         {
             _carrUtil->Display_PrintCentered("LIGHT", 70, 2, COLOR_WHITE);
             _carrUtil->Display_FillPrintCentered(String(sensorData.Light), 110, 3, COLOR_WHITE);
             writeArrows();
         }
-        else if (screen == SETTINGS && lastScreen != SETTINGS)
+        else if (_screen == SETTINGS && _lastScreen != SETTINGS)
         {
             _carrUtil->Display_Fill(COLOR_BLACK);
             _carrUtil->Display_PrintCentered("SETTINGS", 30, 2, COLOR_WHITE);
 
             _carrUtil->Display_Print("DEVICE ID: " + _devId, 30, 60, 1, COLOR_WHITE);
-            _carrUtil->Display_Print("HEARTBEAT: " + String(heartbeatIntervalMs / 1000) + " seconds", 30, 75, 1, COLOR_WHITE);
+            _carrUtil->Display_Print("HEARTBEAT: " + String(_heartbeatIntervalMs / 1000) + " seconds", 30, 75, 1, COLOR_WHITE);
             _carrUtil->Display_Print("DATA: " + String(DATA_INTERVAL_MS / 1000) + " seconds", 30, 90, 1, COLOR_WHITE);
             
             if (String(DASHBOARD_SERVER_IP).length() < 20 || String(API_SERVER_IP).length() < 20)
@@ -228,7 +228,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
             _carrUtil->Display_Print("<- BACK", 30, 160, 1, COLOR_WHITE);
             _carrUtil->Display_Print("DISCONNECT ->", 135, 160, 1, COLOR_WHITE);
         }
-        else if (screen == CONFIRM_DISCONNECT)
+        else if (_screen == CONFIRM_DISCONNECT)
         {
             _carrUtil->Display_Fill(COLOR_RED);
             _carrUtil->Display_PrintCentered("CONFIRM", 60, 2, COLOR_WHITE);
@@ -239,41 +239,41 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
             _carrUtil->Display_Print("CONFIRM ->", 150, 160, 1, COLOR_WHITE);
         }
 
-        if (screen != SETTINGS && screen != CONFIRM_DISCONNECT)
+        if (_screen != SETTINGS && _screen != CONFIRM_DISCONNECT)
         {
-            lastDataScreen = screen;
+            _lastDataScreen = _screen;
         }
 
 
-        lastScreen = screen;
+        _lastScreen = _screen;
         
         updateScreen = false;
     }
 
-    if (screen == SETTINGS)
+    if (_screen == SETTINGS)
     {
         if (_carrUtil->Button_PressDown(TOUCH0))
         {
-            screen = lastDataScreen;
+            _screen = _lastDataScreen;
             updateScreen = true;
         }
 
         if (_carrUtil->Button_PressDown(TOUCH4))
         {
-            screen = CONFIRM_DISCONNECT;
+            _screen = CONFIRM_DISCONNECT;
             updateScreen = true;
         }
     }
-    else if (screen == CONFIRM_DISCONNECT)
+    else if (_screen == CONFIRM_DISCONNECT)
     {
         if (_carrUtil->Button_PressDown(TOUCH0))
         {
-            screen = SETTINGS;
+            _screen = SETTINGS;
             updateScreen = true;
         }
         else if (_carrUtil->Button_PressDown(TOUCH4))
         {
-            screen = ALL;
+            _screen = ALL;
             updateScreen = true;
             return DISCONNECTED;
         }
@@ -282,28 +282,28 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
     {
         if (_carrUtil->Button_PressDown(TOUCH4))
         {
-            screen = static_cast<DeviceScreen>((screen + 1) % 5);
+            _screen = static_cast<DeviceScreen>((_screen + 1) % 5);
             updateScreen = true;
         }
         else if (_carrUtil->Button_PressDown(TOUCH0))
         {
-            screen = static_cast<DeviceScreen>((screen - 1 + 5) % 5);
+            _screen = static_cast<DeviceScreen>((_screen - 1 + 5) % 5);
             updateScreen = true;
         }
         else if (_carrUtil->Button_PressDown(TOUCH2))
         {
-            screen = SETTINGS;
+            _screen = SETTINGS;
             updateScreen = true;
         }
     }
 
     unsigned long now = millis();
 
-    if (now - lastHeartbeatMs >= heartbeatIntervalMs)
+    if (now - _lastHeartbeatMs >= _heartbeatIntervalMs)
     {
         if (_dataTransmit.sendHeartbeat(_devId))
         {
-            lastHeartbeatMs = now;
+            _lastHeartbeatMs = now;
         }
         else
         {
@@ -311,9 +311,9 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
         }
     }
 
-    if (now - lastdataTransmissionMs >= DATA_INTERVAL_MS)
+    if (now - _lastdataTransmissionMs >= DATA_INTERVAL_MS)
     {
-        lastdataTransmissionMs = now;
+        _lastdataTransmissionMs = now;
 
         if (!_dataTransmit.sendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture)) 
         {
@@ -321,10 +321,10 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
         }
     }
 
-    if (screen == ALL && now - lastTimeUpdateMs >= timeUpdateMs)
+    if (_screen == ALL && now - _lastTimeUpdateMs >= _timeUpdateMs)
     {
         writeRemainingTime();
-        lastTimeUpdateMs = now;
+        _lastTimeUpdateMs = now;
     }
 
     return CONNECTED;
@@ -332,7 +332,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
 
 DeviceState handleHeartbeatError()
 {
-    if (lastState != HEARTBEAT_ERROR)
+    if (_lastState != HEARTBEAT_ERROR)
     {
         _carrUtil->Display_Fill(COLOR_RED);
         _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);
@@ -350,12 +350,12 @@ DeviceState handleHeartbeatError()
 
         if (_dataTransmit.sendHeartbeat(_devId))
         {
-            lastHeartbeatMs = now;
+            _lastHeartbeatMs = now;
             return CONNECTED;
         }
         else
         {
-            lastState = ERROR;
+            _lastState = ERROR;
             handleHeartbeatError();
         }
     }
@@ -365,7 +365,7 @@ DeviceState handleHeartbeatError()
 
 DeviceState handleDataError(SensorData sensorData)
 {
-    if (lastState != DATA_ERROR)
+    if (_lastState != DATA_ERROR)
     {
         _carrUtil->Display_Fill(COLOR_RED);
         _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
@@ -387,7 +387,7 @@ DeviceState handleDataError(SensorData sensorData)
         }
         else
         {
-            lastState = ERROR;
+            _lastState = ERROR;
             handleDataError(sensorData);
         }
     }
@@ -397,7 +397,7 @@ DeviceState handleDataError(SensorData sensorData)
 
 DeviceState handleTokenError()
 {
-    if (lastState != TOKEN_ERROR)
+    if (_lastState != TOKEN_ERROR)
     {
         _carrUtil->Display_Fill(COLOR_RED);
         _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
@@ -413,7 +413,7 @@ DeviceState handleTokenError()
         _carrUtil->Display_PrintCentered("RETRYING TOKEN", 110, 2, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("RETRIEVAL", 130, 2, COLOR_WHITE);
 
-        lastState = ERROR;
+        _lastState = ERROR;
 
         DeviceState tempState = handleToken();
 
@@ -421,12 +421,12 @@ DeviceState handleTokenError()
         {
             if (_dataTransmit.sendHeartbeat(_devId))
             {
-                lastHeartbeatMs = millis();
+                _lastHeartbeatMs = millis();
                 return CONNECTED;
             }
             else
             {
-                lastState = ERROR;
+                _lastState = ERROR;
                 handleHeartbeatError();
                 return HEARTBEAT_ERROR;
             }
@@ -438,7 +438,7 @@ DeviceState handleTokenError()
 
 DeviceState handleWifiError()
 {
-    if (lastState != WIFI_ERROR)
+    if (_lastState != WIFI_ERROR)
     {
         _carrUtil->Display_Fill(COLOR_RED);
         _carrUtil->Display_PrintCentered(_devId, 60, 2, COLOR_WHITE);

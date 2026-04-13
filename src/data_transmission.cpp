@@ -65,6 +65,7 @@ bool DataTransmitter::sendData(String devId, float temperature, float humidity, 
     doc["pressure"] = round2(pressure);
     doc["light"] = light;
     doc["moisture"] = round2(moisture);
+    
     String json = JSON.stringify(doc);
 
     Serial.println(json);
