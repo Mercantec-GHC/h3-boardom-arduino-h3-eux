@@ -65,8 +65,6 @@ void loop()
 {
     delay(100);
 
-    unsigned long now = millis();
-
     if (state == DISCONNECTED) 
     {
         state = handleDisconnected();
@@ -79,7 +77,7 @@ void loop()
 
     if (state == CONNECTED)
     {
-        state = handleConnected(sensorData, updateScreen, now);
+        state = handleConnected(sensorData, updateScreen);
 
         if (state == DISCONNECTED)
         {
@@ -89,7 +87,7 @@ void loop()
 
     if (state == HEARTBEAT_ERROR)
     {
-        state = handleHeartbeatError(now);
+        state = handleHeartbeatError();
 
         if (state == CONNECTED)
         {
@@ -126,6 +124,8 @@ void loop()
     }
 
     saveLastState(state);
+
+    unsigned long now = millis();
 
     if (now - lastWifiCheckMs >= WIFI_CHECK_INTERVAL_MS)
     {

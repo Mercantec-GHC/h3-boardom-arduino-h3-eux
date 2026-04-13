@@ -154,7 +154,7 @@ DeviceState handleDisconnected()
     return DISCONNECTED;
 }
 
-DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned long now)
+DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
 {
     if (updateScreen)
     {
@@ -297,6 +297,8 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
         }
     }
 
+    unsigned long now = millis();
+
     if (now - lastHeartbeatMs >= heartbeatIntervalMs)
     {
         if (_dataTransmit.sendHeartbeat(_devId))
@@ -328,7 +330,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned 
     return CONNECTED;
 }
 
-DeviceState handleHeartbeatError(unsigned long now)
+DeviceState handleHeartbeatError()
 {
     if (lastState != HEARTBEAT_ERROR)
     {
@@ -344,6 +346,8 @@ DeviceState handleHeartbeatError(unsigned long now)
         _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
         _carrUtil->Display_PrintCentered("RETRYING HEARTBEAT", 105, 2, COLOR_WHITE);
 
+        unsigned long now = millis();
+
         if (_dataTransmit.sendHeartbeat(_devId))
         {
             lastHeartbeatMs = now;
@@ -352,7 +356,7 @@ DeviceState handleHeartbeatError(unsigned long now)
         else
         {
             lastState = ERROR;
-            handleHeartbeatError(now);
+            handleHeartbeatError();
         }
     }
 
@@ -423,7 +427,7 @@ DeviceState handleTokenError()
             else
             {
                 lastState = ERROR;
-                handleHeartbeatError(millis());
+                handleHeartbeatError();
                 return HEARTBEAT_ERROR;
             }
         }
