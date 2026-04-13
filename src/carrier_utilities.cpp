@@ -140,8 +140,7 @@ bool CarrierUtilities::Button_PressDown(touchButtons button)
 }
 
 // -------------------- SD Utilities --------------------
-
-bool CarrierUtilities::SD_Delete(const char* fileName)
+bool CarrierUtilities::SD_Exist(const char* fileName)
 {
     if (!fileName || fileName[0] == '\0')
     {
@@ -150,43 +149,52 @@ bool CarrierUtilities::SD_Delete(const char* fileName)
 
     if (SD.exists(fileName))
     {
+        return true;
+    }
+
+    return false;
+}
+
+bool CarrierUtilities::SD_Delete(const char* fileName)
+{
+    if (SD_Exist(fileName))
+    {
         SD.remove(fileName);
-        
-        if (!SD.exists(fileName))
+
+        if (!SD_Exist(fileName))
         {
             return true;
-        }
-        else
-        {
-            return false;
-        }
+        }        
     }
-    else
+
+    return false;
+
+
+    if (!fileName || fileName[0] == '\0')
     {
-        return true;
+        return false;
     }
 }
 
 bool CarrierUtilities::SD_Write(const char* fileName, String data)
 {
-    if (!fileName || fileName[0] == '\0')
+    if (SD_Exist(fileName))
     {
-        return false;
+        File f = SD.open(fileName, FILE_WRITE);
+
+        if (!f) 
+        {
+            return false;
+        }
+
+        size_t written = f.print(data);
+
+        f.close();
+
+        return written == data.length();
     }
 
-    File f = SD.open(fileName, FILE_WRITE);
-
-    if (!f) 
-    {
-        return false;
-    }
-
-    size_t written = f.print(data);
-
-    f.close();
-
-    return written == data.length();
-
+    return false;
 }
 
 bool CarrierUtilities::SD_WriteOver(const char* fileName, String data)
@@ -201,26 +209,26 @@ bool CarrierUtilities::SD_WriteOver(const char* fileName, String data)
 
 String CarrierUtilities::SD_Read(const char* fileName)
 {
-    if (!fileName || fileName[0] == '\0')
+    if (SD_Exist(fileName))
     {
-        return "";
+        File f = SD.open(fileName, FILE_READ);
+
+        if (!f)
+        {
+            return "";
+        }
+
+        String out;
+
+        while (f.available())
+        {
+            out += (char)f.read();
+        }
+
+        f.close();
+
+        return out;
     }
 
-    File f = SD.open(fileName, FILE_READ);
-
-    if (!f)
-    {
-        return "";
-    }
-
-    String out;
-
-    while (f.available())
-    {
-        out += (char)f.read();
-    }
-
-    f.close();
-
-    return out;
+   return "";
 }   
