@@ -7,13 +7,18 @@ CarrierUtilities* _wifi_carrUtil;
 WiFiClient _client;
 String _jwtToken;
 
-bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs, String jwtToken) 
+bool wifi_Init(CarrierUtilities carrUtil, uint16_t timeoutMs) 
 {
     _wifi_carrUtil = &carrUtil;
-    _jwtToken = jwtToken;
 
     return wifi_Connect(timeoutMs);
 }
+
+void wifi_SetJwtToken(String token)
+{
+    _jwtToken = token;
+}
+
 
 bool wifi_Connect(uint16_t timeoutMs)
 {
@@ -125,6 +130,10 @@ bool wifi_HttpPost(const char* endpoint, String jsonBody, String& response, cons
         if (_jwtToken.length() > 0)
         {
             _client.println("Authorization: Bearer " + _jwtToken);
+        }
+        else
+        {
+            Serial.println("No token found - Sending POST without token...");
         }
 
         _client.print("Content-Length: ");

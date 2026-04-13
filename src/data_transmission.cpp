@@ -85,3 +85,8 @@ bool DataTransmitter::sendData(String devId, float temperature, float humidity, 
 
     return false;
 }
+
+    void DataTransmitter::setJwtToken(String token)
+    {
+        wifi_SetJwtToken(token);
+    }

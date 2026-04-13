@@ -16,6 +16,8 @@ DeviceScreen lastDataScreen = ALL;
 
 unsigned long lastdataTransmissionMs = 0;
 
+const char* jwtFilename = "jwt.txt";
+
 uint16_t timeUpdateMs = 1000;
 unsigned long lastTimeUpdateMs = 0;
 
@@ -37,6 +39,19 @@ void writeArrows()
     _carrUtil->Display_Print("->", 190, 160, 2, COLOR_WHITE);
 }
 
+DeviceState handleToken()
+{
+    String token = _carrUtil->SD_Read(jwtFilename);
+
+    if (token.length() > 0)
+    {
+        _dataTransmit.setJwtToken(token);
+        return CONNECTED;
+    }
+    
+    return TOKEN_ERROR;
+}
+
 void writeRemainingTime()
 {
     uint16_t secondsRemaining = (DATA_INTERVAL_MS - (millis() - lastdataTransmissionMs)) / 1000;
@@ -50,14 +65,35 @@ void saveLastState(DeviceState newState)
     lastState = newState;
 }
 
-DeviceState handleInitialHeartbeat()
+DeviceState handleStartup()
 {
+    DeviceState tempState = DISCONNECTED;
+
     if (_dataTransmit.sendHeartbeat(_devId))
     {
-        return CONNECTED;
+        tempState = CONNECTED;
+    }
+
+    if (tempState == CONNECTED)
+    {
+        tempState = handleToken();
     }
     
-    return DISCONNECTED;
+    return tempState;
+}
+
+DeviceState handleRetrieveToken(String* outToken)
+{
+    String token = _carrUtil->SD_Read(jwtFilename);
+
+    if (token.length() < 1)
+    {
+        return TOKEN_ERROR;
+    }
+
+    *outToken = token;
+
+    return CONNECTED;
 }
 
 DeviceState handleDisconnected()
@@ -355,6 +391,47 @@ DeviceState handleDataError(SensorData sensorData)
     return DATA_ERROR;
 }
 
+DeviceState handleTokenError()
+{
+    if (lastState != TOKEN_ERROR)
+    {
+        _carrUtil->Display_Fill(COLOR_RED);
+        _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("JWT TOKEN", 110, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("ERROR", 130, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("PRESS (04) TO RETRY", 185, 1, COLOR_WHITE);
+    }
+
+    if (_carrUtil->Button_PressDown(TOUCH4))
+    {
+        _carrUtil->Display_Fill(COLOR_RED);
+        _carrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("RETRYING TOKEN", 110, 2, COLOR_WHITE);
+        _carrUtil->Display_PrintCentered("RETRIEVAL", 130, 2, COLOR_WHITE);
+
+        lastState = ERROR;
+
+        DeviceState tempState = handleToken();
+
+        if (tempState == CONNECTED)
+        {
+            if (_dataTransmit.sendHeartbeat(_devId))
+            {
+                lastHeartbeatMs = millis();
+                return CONNECTED;
+            }
+            else
+            {
+                lastState = ERROR;
+                handleHeartbeatError(millis());
+                return HEARTBEAT_ERROR;
+            }
+        }
+    }
+
+    return TOKEN_ERROR;
+}
+
 DeviceState handleWifiError()
 {
     if (lastState != WIFI_ERROR)
@@ -375,4 +452,6 @@ DeviceState handleWifiError()
 
     return WIFI_ERROR;
 }
+
+
 

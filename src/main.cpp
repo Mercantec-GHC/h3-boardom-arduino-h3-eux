@@ -41,7 +41,7 @@ void setup()
     apds9960 = new APDS_9960(carrUtil.Get_Carrier());
     st0160 = new ST0160(carrUtil.Get_Carrier());
 
-    while (!wifi_Init(carrUtil, 3500, carrUtil.SD_Read("jwt.txt"))) 
+    while (!wifi_Init(carrUtil, 3500)) 
     {
         carrUtil.Display_Fill(ST7735_RED);
         carrUtil.Display_PrintCentered("WIFI FAILED", 100, 2, ST7735_WHITE);
@@ -57,7 +57,8 @@ void setup()
 
     deviceId = wifi_GetDeviceID();
     state_init(carrUtil, deviceId);
-    state = handleInitialHeartbeat();
+
+    state = handleStartup();
 }
 
 void loop() 
@@ -101,6 +102,17 @@ void loop()
     {
         state = handleDataError(sensorData);
         
+        if (state == CONNECTED)
+        {
+            updateScreen = true;
+            return;
+        }
+    }
+
+    if (state == TOKEN_ERROR)
+    {
+        state = handleTokenError();
+
         if (state == CONNECTED)
         {
             updateScreen = true;
