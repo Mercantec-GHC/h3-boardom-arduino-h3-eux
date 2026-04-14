@@ -37,7 +37,7 @@ bool DataTransmitter::ConnectDashboard(String devId)
     return false;
 }
 
-bool DataTransmitter::SendHeartbeat(String devId)
+bool DataTransmitter::SendHeartbeat(String devId, String* outToken)
 {
     JSONVar doc;
     doc["deviceId"] = devId;
@@ -53,6 +53,9 @@ bool DataTransmitter::SendHeartbeat(String devId)
 
         if ((bool)res["success"])
         {
+            Serial.println("Printing JSON Object:");
+            Serial.println(res);
+            *outToken = (const char*)res["accessToken"];
             return true;
         }
     }

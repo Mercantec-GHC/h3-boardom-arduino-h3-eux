@@ -7,7 +7,7 @@ public:
     DataTransmitter();
     void Init(CarrierWiFi& carrWifi);
     bool ConnectDashboard(String devId);
-    bool SendHeartbeat(String devId);
+    bool SendHeartbeat(String devId, String* outToken);
     bool SendData(String devId, float temperature, float humidity, float pressure, int light, float moisture);
     void SetJwtToken(String token);
 
