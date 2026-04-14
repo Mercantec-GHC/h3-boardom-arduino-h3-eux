@@ -71,8 +71,9 @@ DeviceState handleToken()
 DeviceState handleStartup()
 {
     DeviceState tempState = DISCONNECTED;
+    String outToken = "";
 
-    if (_dataTransmit.SendHeartbeat(_devId))
+    if (_dataTransmit.SendHeartbeat(_devId, &outToken))
     {
         tempState = CONNECTED;
     }
@@ -104,7 +105,9 @@ DeviceState handleDisconnected()
 
         if (_dataTransmit.ConnectDashboard(_devId))
         {
-            if (_dataTransmit.SendHeartbeat(_devId))
+            String outToken = "";
+
+            if (_dataTransmit.SendHeartbeat(_devId, &outToken))
             {
                 return CONNECTED;
             }
@@ -122,10 +125,11 @@ DeviceState handleDisconnected()
                 
                 if (millis() - lastHbAttemptMs >= 2500)
                 {
-                        if (_dataTransmit.SendHeartbeat(_devId))
-                        {
-                            return CONNECTED;
-                        }
+                    String outToken = "";
+                    if (_dataTransmit.SendHeartbeat(_devId, &outToken))
+                    {
+                        return CONNECTED;
+                    }
                 }
 
                 lastHbAttemptMs = startMs;
@@ -292,7 +296,9 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
     {
         if (_stateCarrWifi->GetToken().length() > 0)
         {
-            if (_dataTransmit.SendHeartbeat(_devId))
+            String outToken = "";
+
+            if (_dataTransmit.SendHeartbeat(_devId, &outToken))
             {
                 _lastHeartbeatMs = now;
             }
@@ -353,7 +359,9 @@ DeviceState handleHeartbeatError()
 
         unsigned long now = millis();
 
-        if (_dataTransmit.SendHeartbeat(_devId))
+        String outToken = "";
+
+        if (_dataTransmit.SendHeartbeat(_devId, &outToken))
         {
             _lastHeartbeatMs = now;
             return CONNECTED;
@@ -424,7 +432,9 @@ DeviceState handleTokenError()
 
         if (tempState == CONNECTED)
         {
-            if (_dataTransmit.SendHeartbeat(_devId))
+            String outToken = "";
+
+            if (_dataTransmit.SendHeartbeat(_devId, &outToken))
             {
                 _lastHeartbeatMs = millis();
                 return CONNECTED;
