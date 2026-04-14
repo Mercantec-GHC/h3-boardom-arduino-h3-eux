@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <carrier_utilities.h>
 #include <config.h>
-#include <wifi_handle.h>
+#include <carrier_wifi.h>
 #include <device_status.h>
 
 #include <data_transmission.h>
@@ -14,6 +14,7 @@
 void updateSensorData();
 
 CarrierUtilities _carrUtil;
+CarrierWiFi _carrWifi;
 BME688* _bme688;
 APDS_9960* _apds9960;
 ST0160* _st0160;
@@ -41,7 +42,7 @@ void setup()
     _apds9960 = new APDS_9960(_carrUtil.Get_Carrier());
     _st0160 = new ST0160(_carrUtil.Get_Carrier());
 
-    while (!wifi_Init(_carrUtil, 3500)) 
+    while (!_carrWifi.Init(_carrUtil, 3500)) 
     {
         _carrUtil.Display_Fill(ST7735_RED);
         _carrUtil.Display_PrintCentered("WIFI FAILED", 100, 2, ST7735_WHITE);
@@ -55,8 +56,9 @@ void setup()
         }
     }
 
-    _deviceId = wifi_GetDeviceID();
-    state_init(_carrUtil, _deviceId);
+    _deviceId = _carrWifi.GetDeviceID();
+    
+    state_init(_carrUtil, _carrWifi, _deviceId);
 
     _state = handleStartup();
 }
@@ -129,7 +131,7 @@ void loop()
 
     if (now - _lastWifiCheckMs >= WIFI_CHECK_INTERVAL_MS)
     {
-        if (!wifi_IsConnected())
+        if (!_carrWifi.IsConnected())
         {
             _state = WIFI_ERROR;
         }

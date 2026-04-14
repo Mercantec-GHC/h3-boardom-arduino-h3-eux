@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <device_status.h>
 #include <carrier_utilities.h>
+#include <carrier_wifi.h>
 
-void state_init(CarrierUtilities& carrUtil, String devId);
+void state_init(CarrierUtilities& carrUtil, CarrierWiFi& carrWifi, String devId);
 void saveLastState(DeviceState newState);
 
 DeviceState handleStartup();
-DeviceState handleRetrieveToken(String* outToken);
+DeviceState handleToken(String* outToken);
 
 DeviceState handleDisconnected();
 DeviceState handleConnected(SensorData sensorData, bool& updateScreen);

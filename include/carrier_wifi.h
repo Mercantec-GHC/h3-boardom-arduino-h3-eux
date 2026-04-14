@@ -8,10 +8,11 @@ class CarrierWiFi {
 public:
     CarrierWiFi();
 
-    bool Init(CarrierUtilities carrUtil, uint16_t timeoutMs);
+    bool Init(CarrierUtilities& carrUtil, uint16_t timeoutMs);
     bool Connect(uint16_t timeoutMs);
     bool IsConnected();
     void SetToken(String token);
+    String GetToken();
     String GetDeviceID();
     bool PostAsJson(const char* endpoint, String jsonBody, String& response, const char* ip, uint16_t port);
 

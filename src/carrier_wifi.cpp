@@ -5,7 +5,7 @@ CarrierWiFi::CarrierWiFi()
 {
 }
 
-bool CarrierWiFi::Init(CarrierUtilities carrUtil, uint16_t timeoutMs)
+bool CarrierWiFi::Init(CarrierUtilities& carrUtil, uint16_t timeoutMs)
 {
     _carrUtil = &carrUtil;
     return Connect(timeoutMs);
@@ -63,6 +63,12 @@ void CarrierWiFi::SetToken(String token)
 {
     _token = token;
 }
+
+String CarrierWiFi::GetToken()
+{
+    return _token;
+}
+
 
 String CarrierWiFi::GetDeviceID()
 {

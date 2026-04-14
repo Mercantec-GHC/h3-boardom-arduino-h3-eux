@@ -1,9 +1,7 @@
 #include <state_logic.h>
 #include <config.h>
 #include <data_transmission.h>
-#include <wifi_handle.h>
 
-DataTransmitter _dataTransmit;
 
 uint32_t _heartbeatIntervalMs = 100000;
 unsigned long _lastHeartbeatMs = 0;
@@ -21,13 +19,18 @@ const char* _jwtFilename = "jwt.txt";
 uint16_t _timeUpdateMs = 1000;
 unsigned long _lastTimeUpdateMs = 0;
 
+DataTransmitter _dataTransmit;
 CarrierUtilities* _stateCarrUtil;
+CarrierWiFi* _stateCarrWifi;
 String _devId;
 
-void state_init(CarrierUtilities& carrUtil, String devId)
+void state_init(CarrierUtilities& carrUtil, CarrierWiFi& carrWifi, String devId)
 {
     _stateCarrUtil = &carrUtil;
     _devId = devId;
+    _stateCarrWifi = &carrWifi;
+
+    _dataTransmit.Init(carrWifi);
 
     randomSeed(analogRead(A6) ^ micros() ^ millis());
     _heartbeatIntervalMs = random(60000, 180000); // Random interval between 1 and 3 minutes
@@ -37,19 +40,6 @@ void writeArrows()
 {
     _stateCarrUtil->Display_Print("<-", 30, 160, 2, COLOR_WHITE);
     _stateCarrUtil->Display_Print("->", 190, 160, 2, COLOR_WHITE);
-}
-
-DeviceState handleToken()
-{
-    String token = _stateCarrUtil->SD_Read(_jwtFilename);
-
-    if (token.length() > 0)
-    {
-        _dataTransmit.setJwtToken(token);
-        return CONNECTED;
-    }
-    
-    return TOKEN_ERROR;
 }
 
 void writeRemainingTime()
@@ -65,11 +55,24 @@ void saveLastState(DeviceState newState)
     _lastState = newState;
 }
 
+DeviceState handleToken()
+{
+    String token = _stateCarrUtil->SD_Read(_jwtFilename);
+
+    if (token.length() > 0)
+    {
+        _dataTransmit.SetJwtToken(token);
+        return CONNECTED;
+    }
+    
+    return TOKEN_ERROR;
+}
+
 DeviceState handleStartup()
 {
     DeviceState tempState = DISCONNECTED;
 
-    if (_dataTransmit.sendHeartbeat(_devId))
+    if (_dataTransmit.SendHeartbeat(_devId))
     {
         tempState = CONNECTED;
     }
@@ -80,20 +83,6 @@ DeviceState handleStartup()
     }
     
     return tempState;
-}
-
-DeviceState handleRetrieveToken(String* outToken)
-{
-    String token = _stateCarrUtil->SD_Read(_jwtFilename);
-
-    if (token.length() < 1)
-    {
-        return TOKEN_ERROR;
-    }
-
-    *outToken = token;
-
-    return CONNECTED;
 }
 
 DeviceState handleDisconnected()
@@ -113,9 +102,9 @@ DeviceState handleDisconnected()
         _stateCarrUtil->Display_PrintCentered(_devId, 38, 1, COLOR_WHITE);
         _stateCarrUtil->Display_PrintCentered("CONNECTING...", 110, 2, COLOR_WHITE);
 
-        if (_dataTransmit.connectDashboard(_devId))
+        if (_dataTransmit.ConnectDashboard(_devId))
         {
-            if (_dataTransmit.sendHeartbeat(_devId))
+            if (_dataTransmit.SendHeartbeat(_devId))
             {
                 return CONNECTED;
             }
@@ -133,7 +122,7 @@ DeviceState handleDisconnected()
                 
                 if (millis() - lastHbAttemptMs >= 2500)
                 {
-                        if (_dataTransmit.sendHeartbeat(_devId))
+                        if (_dataTransmit.SendHeartbeat(_devId))
                         {
                             return CONNECTED;
                         }
@@ -142,11 +131,11 @@ DeviceState handleDisconnected()
                 lastHbAttemptMs = startMs;
             }
             
-            _lastState = HEARTBEAT_ERROR; // Just something other than DISCONNECTED
+            _lastState = ERROR; // Just something other than DISCONNECTED
             return DISCONNECTED;
         }
         
-        _lastState = HEARTBEAT_ERROR; // Just something other than DISCONNECTED
+        _lastState = ERROR; // Just something other than DISCONNECTED
         return DISCONNECTED;
     }
 
@@ -301,24 +290,40 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
 
     if (now - _lastHeartbeatMs >= _heartbeatIntervalMs)
     {
-        if (_dataTransmit.sendHeartbeat(_devId))
+        if (_stateCarrWifi->GetToken().length() > 0)
         {
-            _lastHeartbeatMs = now;
+            if (_dataTransmit.SendHeartbeat(_devId))
+            {
+                _lastHeartbeatMs = now;
+            }
+            else
+            {
+                return HEARTBEAT_ERROR;
+            }
         }
         else
         {
-            return HEARTBEAT_ERROR;
+            return handleToken();
         }
+       
     }
 
     if (now - _lastdataTransmissionMs >= DATA_INTERVAL_MS)
     {
-        _lastdataTransmissionMs = now;
-
-        if (!_dataTransmit.sendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture)) 
+        if (_stateCarrWifi->GetToken().length() > 0)
         {
-            return DATA_ERROR;
+            _lastdataTransmissionMs = now;
+
+            if (!_dataTransmit.SendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture)) 
+            {
+                return DATA_ERROR;
+            }
         }
+        else
+        {
+            return handleToken();
+        }
+
     }
 
     if (_screen == ALL && now - _lastTimeUpdateMs >= _timeUpdateMs)
@@ -348,7 +353,7 @@ DeviceState handleHeartbeatError()
 
         unsigned long now = millis();
 
-        if (_dataTransmit.sendHeartbeat(_devId))
+        if (_dataTransmit.SendHeartbeat(_devId))
         {
             _lastHeartbeatMs = now;
             return CONNECTED;
@@ -381,7 +386,7 @@ DeviceState handleDataError(SensorData sensorData)
         _stateCarrUtil->Display_PrintCentered("RETRYING DATA", 110, 2, COLOR_WHITE);
         _stateCarrUtil->Display_PrintCentered("TRANSMISSION", 130, 2, COLOR_WHITE);
 
-        if (_dataTransmit.sendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture))
+        if (_dataTransmit.SendData(_devId, sensorData.Temperature, sensorData.Humidity, sensorData.Pressure, sensorData.Light, sensorData.Moisture))
         {
             return CONNECTED;
         }
@@ -419,7 +424,7 @@ DeviceState handleTokenError()
 
         if (tempState == CONNECTED)
         {
-            if (_dataTransmit.sendHeartbeat(_devId))
+            if (_dataTransmit.SendHeartbeat(_devId))
             {
                 _lastHeartbeatMs = millis();
                 return CONNECTED;
@@ -448,7 +453,7 @@ DeviceState handleWifiError()
 
     if (_stateCarrUtil->Button_PressDown(TOUCH2))
     {
-        if (wifi_Connect(3500))
+        if (_stateCarrWifi->Connect(3500))
         {
             return CONNECTED;
         }
