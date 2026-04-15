@@ -52,12 +52,9 @@ bool DataTransmitter::SendHeartbeat(String devId)
     {
         JSONVar res = JSON.parse(postResponse);
 
-        Serial.println(JSON.stringify(res));
-
         if ((bool)res["success"])
         {
             token = (const char*)res["accessToken"];
-            Serial.println("Token: " + token);
 
             _writeJwtToken(token);
 
@@ -84,13 +81,16 @@ bool DataTransmitter::SendData(String devId, float temperature, float humidity, 
 
     String postResponse;
 
-    if (_carrWifi->PostAsJson("/Data/sensorData", json, postResponse, API_SERVER_IP, API_PORT))
+    if (_carrWifi->PostAsJson("/sensorData", json, postResponse, API_SERVER_IP, API_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
-        Serial.println(String((const char*) res["deviceId"]));
+        if (String((const char*)res["error"]) != null)
+        {
+            return false;
+        }
 
-        if (String((const char*) res["deviceId"]) == devId)
+        if (String((const char*)res["message"]).indexOf("recorded") > 0 && String((const char*)res["deviceId"]) == devId)
         {
             return true;
         }

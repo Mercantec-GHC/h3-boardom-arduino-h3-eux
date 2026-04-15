@@ -1,6 +1,84 @@
 #include <carrier_wifi.h>
 #include <config.h>
 
+String _addLine(String name, uint16_t length)
+{
+    uint16_t dashLength = length - (name.length() + 2);
+    uint16_t leftDashes = dashLength / 2;
+    uint16_t rightDashes = dashLength - leftDashes;
+
+    String leftStr = "";
+    for (uint8_t i = 0; i < leftDashes; i++)
+    {
+        leftStr += "-";
+    }
+
+    String rightStr = "";
+    for (uint8_t i = 0; i < rightDashes; i++)
+    {
+        rightStr += "-";
+    }
+
+    return leftStr + " " + name + " " + rightStr;
+}
+
+String _formatJson(String json)
+{
+    String formatted = "";
+    uint8_t indent = 0;
+    bool inString = false;
+    
+    for (uint16_t i = 0; i < json.length(); i++)
+    {
+        char c = json.charAt(i);
+        char prev = (i > 0) ? json.charAt(i - 1) : '\0';
+        
+        if (c == '"' && prev != '\\')
+        {
+            inString = !inString;
+        }
+        
+        if (!inString)
+        {
+            if (c == '{' || c == '[')
+            {
+                formatted += c;
+                formatted += "\n";
+                indent++;
+                for (uint8_t j = 0; j < indent; j++) formatted += "  ";
+            }
+            else if (c == '}' || c == ']')
+            {
+                formatted += "\n";
+                indent--;
+                for (uint8_t j = 0; j < indent; j++) formatted += "  ";
+                formatted += c;
+            }
+            else if (c == ',')
+            {
+                formatted += c;
+                formatted += "\n";
+                for (uint8_t j = 0; j < indent; j++) formatted += "  ";
+            }
+            else if (c == ':')
+            {
+                formatted += c;
+                formatted += " ";
+            }
+            else if (c != ' ' && c != '\n' && c != '\r' && c != '\t')
+            {
+                formatted += c;
+            }
+        }
+        else
+        {
+            formatted += c;
+        }
+    }
+    
+    return formatted;
+}
+
 CarrierWiFi::CarrierWiFi()
 {
 }
@@ -69,7 +147,6 @@ String CarrierWiFi::GetToken()
     return _token;
 }
 
-
 String CarrierWiFi::GetDeviceID()
 {
     byte mac[6];
@@ -99,23 +176,26 @@ bool CarrierWiFi::PostAsJson(const char* endpoint, String jsonBody, String& resp
             return false;
         }
 
+        Serial.println(_addLine("POST REQUEST", 90));
+        Serial.println(_addLine("FULL URL", 40));
         Serial.println(String(ip) + ":" + String(port) + String(endpoint));
 
         String constructedPost = "POST " + String(endpoint) + " HTTP/1.1";
-
-        Serial.println("-> " + constructedPost);
 
         _client.println(constructedPost);
         _client.println("Host: " + String(ip));
         _client.println("Content-Type: application/json");
 
+        Serial.println(_addLine("TOKEN", 40));
+
         if (_token.length() > 0)
         {
+            Serial.println("TRUE");
             _client.println("Authorization: Bearer " + _token);
         }
         else
         {
-            Serial.println("No token found - Sending POST without token...");
+            Serial.println("FALSE");
         }
 
         _client.print("Content-Length: ");
@@ -124,10 +204,26 @@ bool CarrierWiFi::PostAsJson(const char* endpoint, String jsonBody, String& resp
         _client.println();
         _client.print(jsonBody);
 
+        Serial.println(_addLine("REQUEST BODY", 40));
+        Serial.println(_formatJson(jsonBody));
+
         String statusLine = _client.readStringUntil('\n');
+        statusLine.trim();
         response = _readResponseBody();
         
-        Serial.println(response);
+        Serial.println(_addLine("RESPONSE BODY", 40));
+
+        String trimmedResponse = response;
+
+        trimmedResponse.trim();
+        
+        int16_t idx_oBracket =  trimmedResponse.indexOf("{");
+        int16_t idx_cBracket =  trimmedResponse.indexOf("}");
+
+        trimmedResponse.remove(idx_cBracket + 1);
+        trimmedResponse.remove(0, idx_oBracket);
+
+        Serial.println(_formatJson(trimmedResponse));
 
         _client.stop();
 
@@ -143,17 +239,14 @@ bool CarrierWiFi::PostAsJson(const char* endpoint, String jsonBody, String& resp
 
         bool success = false;
 
-        Serial.println("Idx_200: " + String(idx_200));
-        Serial.println("Idx_201: " + String(idx_201));
-        
         if (idx_200 >= 0 || idx_201 >= 0)
         {
             success = true;
         }
 
-        Serial.println(statusLine);
-        Serial.print(" -> ");
-        Serial.println(success ? "OK" : "FAILED"); 
+        
+        Serial.println(_addLine("STATUSLINE", 40));
+        Serial.println(statusLine + " -> " + (success ? "OK" : "FAILED")); 
         
         if (success)
         {
