@@ -83,6 +83,13 @@ Below is an overview of the states used in the system.
 
 ---
 
+### `TOKEN_ERROR`
+**Purpose:**
+- The device enters this state if it cannot retrieve a JWT Token from the SD Card
+- User can press a button to retry this retrieval
+
+---
+
 ### `WIFI_ERROR`
 **Purpose:**
 - The device enters this state if it suddenly loses WiFi connection

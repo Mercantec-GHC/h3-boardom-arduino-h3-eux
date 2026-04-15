@@ -1,7 +1,6 @@
 #include <data_transmission.h>
 #include <Arduino_JSON.h>
 #include <config.h>
-#include <wifi_handle.h>
 
 double round2(float v)
 {
@@ -12,7 +11,14 @@ DataTransmitter::DataTransmitter()
 {
 }
 
-bool DataTransmitter::connectDashboard(String devId)
+void DataTransmitter::Init(CarrierUtilities& carrUtil, CarrierWiFi& carrWifi, const char* jwtFilename)
+{
+    _carrUtil = &carrUtil;
+    _carrWifi = &carrWifi;
+    _jwtFilename = jwtFilename;
+}
+
+bool DataTransmitter::ConnectDashboard(String devId)
 {
     JSONVar doc;
     doc["deviceId"] = devId;
@@ -20,7 +26,7 @@ bool DataTransmitter::connectDashboard(String devId)
 
     String postResponse;
 
-    if (wifi_HttpPost("/api/connect", json, postResponse, DASHBOARD_SERVER_IP, DASHBOARD_PORT))
+    if (_carrWifi->PostAsJson("/api/connect", json, postResponse, DASHBOARD_SERVER_IP, DASHBOARD_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
@@ -33,22 +39,25 @@ bool DataTransmitter::connectDashboard(String devId)
     return false;
 }
 
-bool DataTransmitter::sendHeartbeat(String devId)
+bool DataTransmitter::SendHeartbeat(String devId)
 {
     JSONVar doc;
     doc["deviceId"] = devId;
     String json = JSON.stringify(doc);
 
     String postResponse;
+    String token;
 
-    if (wifi_HttpPost("/Device/heartbeat", json, postResponse, API_SERVER_IP, API_PORT))
+    if (_carrWifi->PostAsJson("/Device/heartbeat", json, postResponse, API_SERVER_IP, API_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
-        Serial.println(JSON.stringify(res));
-
         if ((bool)res["success"])
         {
+            token = (const char*)res["accessToken"];
+
+            _writeJwtToken(token);
+
             return true;
         }
     }
@@ -56,7 +65,7 @@ bool DataTransmitter::sendHeartbeat(String devId)
     return false;
 }
 
-bool DataTransmitter::sendData(String devId, float temperature, float humidity, float pressure, int light, float moisture)
+bool DataTransmitter::SendData(String devId, float temperature, float humidity, float pressure, int light, float moisture)
 {
     JSONVar doc;
     doc["deviceId"] = devId;
@@ -65,23 +74,52 @@ bool DataTransmitter::sendData(String devId, float temperature, float humidity, 
     doc["pressure"] = round2(pressure);
     doc["light"] = light;
     doc["moisture"] = round2(moisture);
+    
     String json = JSON.stringify(doc);
 
     Serial.println(json);
 
     String postResponse;
 
-    if (wifi_HttpPost("/Data/sensorData", json, postResponse, API_SERVER_IP, API_PORT))
+    if (_carrWifi->PostAsJson("/sensorData", json, postResponse, API_SERVER_IP, API_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 
-        Serial.println(String((const char*) res["deviceId"]));
+        if (String((const char*)res["error"]) != null)
+        {
+            return false;
+        }
 
-        if (String((const char*) res["deviceId"]) == devId)
+        if (String((const char*)res["message"]).indexOf("recorded") > 0 && String((const char*)res["deviceId"]) == devId)
         {
             return true;
         }
     }
 
     return false;
+}
+
+void DataTransmitter::_writeJwtToken(String token)
+{
+    if (token.length() > 0)
+    {
+        bool success = _carrUtil->SD_WriteOver(_jwtFilename, token);
+
+        if (success)
+        {
+            Serial.println("JWT Saved to SD: TRUE");
+        }
+        else
+        {
+            Serial.println("JWT Saved to SD: FALSE");
+        }
+    
+        SetJwtToken(token);
+    }
+}
+
+
+void DataTransmitter::SetJwtToken(String token)
+{
+    _carrWifi->SetToken(token);
 }

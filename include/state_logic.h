@@ -1,14 +1,18 @@
 #include <Arduino.h>
 #include <device_status.h>
 #include <carrier_utilities.h>
+#include <carrier_wifi.h>
 
-void state_init(CarrierUtilities& carrUtil, String devId);
+void state_init(CarrierUtilities& carrUtil, CarrierWiFi& carrWifi, String devId);
 void saveLastState(DeviceState newState);
 
-DeviceState handleInitialHeartbeat();
+DeviceState handleStartup();
+DeviceState handleGetToken();
 
 DeviceState handleDisconnected();
-DeviceState handleConnected(SensorData sensorData, bool& updateScreen, unsigned long now);
-DeviceState handleHeartbeatError(unsigned long now);
+DeviceState handleConnected(SensorData sensorData, bool& updateScreen);
+DeviceState handleHeartbeatError();
 DeviceState handleDataError(SensorData sensorData);
+DeviceState handleTokenError();
 DeviceState handleWifiError();
+

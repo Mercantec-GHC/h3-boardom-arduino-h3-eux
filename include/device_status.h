@@ -6,6 +6,7 @@ enum DeviceState {
     HEARTBEAT_ERROR,
     DATA_ERROR,
     WIFI_ERROR,
+    TOKEN_ERROR,
     ERROR,
 };
 

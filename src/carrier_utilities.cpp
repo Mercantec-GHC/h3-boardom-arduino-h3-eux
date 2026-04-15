@@ -32,7 +32,7 @@ Adafruit_ST7789& CarrierUtilities::Display() {
 void CarrierUtilities::Display_Fill(uint32_t color)
 {
     _display.fillScreen(color);
-    currentFillColor = color;
+    _currentFillColor = color;
 }
 
 void CarrierUtilities::Display_FillRect(uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint32_t color)
@@ -92,7 +92,7 @@ void CarrierUtilities::Display_FillPrintCentered(String text, uint8_t y, uint8_t
 {
     uint8_t height = 8 * size;
 
-    Display_FillRect(0, y, _displayW, height, currentFillColor);
+    Display_FillRect(0, y, _displayW, height, _currentFillColor);
     Display_PrintCentered(text, y, size, color);
 }
 
@@ -139,3 +139,96 @@ bool CarrierUtilities::Button_PressDown(touchButtons button)
     return _carrier.Buttons.onTouchDown(button);
 }
 
+// -------------------- SD Utilities --------------------
+bool CarrierUtilities::SD_Exist(const char* fileName)
+{
+    if (!fileName || fileName[0] == '\0')
+    {
+        return false;
+    }
+
+    if (SD.exists(fileName))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+bool CarrierUtilities::SD_Delete(const char* fileName)
+{
+    if (SD_Exist(fileName))
+    {
+        SD.remove(fileName);
+
+        if (!SD_Exist(fileName))
+        {
+            return true;
+        }        
+    }
+    else
+    {
+       return true; 
+    }
+
+    return false;
+}
+
+bool CarrierUtilities::SD_Write(const char* fileName, String data)
+{
+    if (SD_Exist(fileName))
+    {
+        File f = SD.open(fileName, FILE_WRITE);
+
+        if (!f) 
+        {
+            return false;
+        }
+
+        size_t written = f.print(data);
+
+        f.close();
+
+        return written == data.length();
+    }
+
+    return false;
+}
+
+bool CarrierUtilities::SD_WriteOver(const char* fileName, String data)
+{
+    if (!SD_Delete(fileName))
+    {
+        return false;
+    }
+
+    SD.open(fileName, FILE_WRITE);
+
+    return SD_Write(fileName, data);
+}
+
+String CarrierUtilities::SD_Read(const char* fileName)
+{
+    if (SD_Exist(fileName))
+    {
+        File f = SD.open(fileName, FILE_READ);
+
+        if (!f)
+        {
+            return "";
+        }
+
+        String out;
+
+        while (f.available())
+        {
+            out += (char)f.read();
+        }
+
+        f.close();
+
+        return out;
+    }
+
+   return "";
+}   

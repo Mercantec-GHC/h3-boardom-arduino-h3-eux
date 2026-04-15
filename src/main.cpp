@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <carrier_utilities.h>
 #include <config.h>
-#include <wifi_handle.h>
+#include <carrier_wifi.h>
 #include <device_status.h>
 
 #include <data_transmission.h>
@@ -13,122 +13,135 @@
 
 void updateSensorData();
 
-CarrierUtilities carrUtil;
-BME688* bme688;
-APDS_9960* apds9960;
-ST0160* st0160;
+CarrierUtilities _carrUtil;
+CarrierWiFi _carrWifi;
+BME688* _bme688;
+APDS_9960* _apds9960;
+ST0160* _st0160;
 
-String deviceId;
+String _deviceId;
 
-DeviceState state = DISCONNECTED;
+DeviceState _state = DISCONNECTED;
 
-SensorData sensorData;
-unsigned long lastSensorUpdateMs = 0;
+SensorData _sensorData;
+unsigned long _lastSensorUpdateMs = 0;
 
-bool updateScreen = true;
+bool _updateScreen = true;
 
-unsigned long lastDataTransmissionMs = 0;
-unsigned long lastWifiCheckMs = 0;
+unsigned long _lastDataTransmissionMs = 0;
+unsigned long _lastWifiCheckMs = 0;
 
 void setup() 
 {
     Serial.begin(9600);
 
-    carrUtil.Init(USING_CARRIER_CASE);
+    _carrUtil.Init(USING_CARRIER_CASE);
+    _carrUtil.Display_SetRotation(ROTATION_0);
 
-    bme688 = new BME688(carrUtil.Get_Carrier());
-    apds9960 = new APDS_9960(carrUtil.Get_Carrier());
-    st0160 = new ST0160(carrUtil.Get_Carrier());
+    _bme688 = new BME688(_carrUtil.Get_Carrier());
+    _apds9960 = new APDS_9960(_carrUtil.Get_Carrier());
+    _st0160 = new ST0160(_carrUtil.Get_Carrier());
 
-    carrUtil.Display_SetRotation(ROTATION_0);
-
-    while (!wifi_Init(carrUtil, 3500)) 
+    while (!_carrWifi.Init(_carrUtil, 3500)) 
     {
-        carrUtil.Display_Fill(ST7735_RED);
-        carrUtil.Display_PrintCentered("WIFI FAILED", 100, 2, ST7735_WHITE);
-        carrUtil.Display_PrintCentered("PRESS (04) TO TRY AGAIN", 130, 1, ST7735_WHITE);
+        _carrUtil.Display_Fill(ST7735_RED);
+        _carrUtil.Display_PrintCentered("WIFI FAILED", 100, 2, ST7735_WHITE);
+        _carrUtil.Display_PrintCentered("PRESS (04) TO TRY AGAIN", 130, 1, ST7735_WHITE);
         while (1) 
         {
-            if (carrUtil.Button_PressDown(TOUCH4)) 
+            if (_carrUtil.Button_PressDown(TOUCH4)) 
             {
                 break;
             }
         }
     }
 
-    deviceId = wifi_GetDeviceID();
-    state_init(carrUtil, deviceId);
-    state = handleInitialHeartbeat();
+    _deviceId = _carrWifi.GetDeviceID();
+    
+    state_init(_carrUtil, _carrWifi, _deviceId);
+
+    _state = handleStartup();
 }
 
 void loop() 
 {
     delay(100);
 
+    if (_state == DISCONNECTED) 
+    {
+        _state = handleDisconnected();
+
+        if (_state == DISCONNECTED)
+        {
+            return;
+        }
+    }
+
+    if (_state == CONNECTED)
+    {
+        _state = handleConnected(_sensorData, _updateScreen);
+
+        if (_state == DISCONNECTED)
+        {
+            return;
+        }
+    }
+
+    if (_state == HEARTBEAT_ERROR)
+    {
+        _state = handleHeartbeatError();
+
+        if (_state == CONNECTED)
+        {
+            _updateScreen = true;
+            return;
+        }
+    }
+
+    if (_state == DATA_ERROR)
+    {
+        _state = handleDataError(_sensorData);
+        
+        if (_state == CONNECTED)
+        {
+            _updateScreen = true;
+            return;
+        }
+    }
+
+    if (_state == TOKEN_ERROR)
+    {
+        _state = handleTokenError();
+
+        if (_state == CONNECTED)
+        {
+            _updateScreen = true;
+            return;
+        }
+    }
+
+    if (_state == WIFI_ERROR)
+    {
+        _state = handleWifiError();
+    }
+
+    saveLastState(_state);
+
     unsigned long now = millis();
 
-    if (state == DISCONNECTED) 
+    if (now - _lastWifiCheckMs >= WIFI_CHECK_INTERVAL_MS)
     {
-        state = handleDisconnected();
-
-        if (state == DISCONNECTED)
+        if (!_carrWifi.IsConnected())
         {
-            return;
-        }
-    }
-
-    if (state == CONNECTED)
-    {
-        state = handleConnected(sensorData, updateScreen, now);
-
-        if (state == DISCONNECTED)
-        {
-            return;
-        }
-    }
-
-    if (state == HEARTBEAT_ERROR)
-    {
-        state = handleHeartbeatError(now);
-
-        if (state == CONNECTED)
-        {
-            updateScreen = true;
-            return;
-        }
-    }
-
-    if (state == DATA_ERROR)
-    {
-        state = handleDataError(sensorData);
-        
-        if (state == CONNECTED)
-        {
-            updateScreen = true;
-            return;
-        }
-    }
-
-    if (state == WIFI_ERROR)
-    {
-        state = handleWifiError();
-    }
-
-    saveLastState(state);
-
-    if (now - lastWifiCheckMs >= WIFI_CHECK_INTERVAL_MS)
-    {
-        if (!wifi_IsConnected())
-        {
-            state = WIFI_ERROR;
+            _state = WIFI_ERROR;
         }
 
-        lastWifiCheckMs = now;
+        _lastWifiCheckMs = now;
     }    
 
-    if (now - lastSensorUpdateMs >= 2500)
+    if (now - _lastSensorUpdateMs >= 2500)
     {
-        lastSensorUpdateMs = now;
+        _lastSensorUpdateMs = now;
         updateSensorData();
     }
 }
@@ -141,32 +154,32 @@ void updateSensorData()
     float moist;
     int light;
 
-    bme688->getTemperature(temp);
-    bme688->getHumidity(humid);
-    bme688->getPressure(pres);
-    apds9960->getLight(light);
+    _bme688->getTemperature(temp);
+    _bme688->getHumidity(humid);
+    _bme688->getPressure(pres);
+    _apds9960->getLight(light);
 
     if (USING_ST0160)
     {
-        st0160->getMoisture(ST0160_PIN, moist);
+        _st0160->getMoisture(ST0160_PIN, moist);
     }
     else
     {
         moist = 0.00;
     }
 
-    if (temp != sensorData.Temperature || 
-        humid != sensorData.Humidity || 
-        pres != sensorData.Pressure || 
-        light != sensorData.Light || 
-        moist != sensorData.Moisture)
+    if (temp != _sensorData.Temperature || 
+        humid != _sensorData.Humidity || 
+        pres != _sensorData.Pressure || 
+        light != _sensorData.Light || 
+        moist != _sensorData.Moisture)
     {
-        updateScreen = true;
+        _updateScreen = true;
     }
 
-    sensorData.Temperature = temp;
-    sensorData.Humidity = humid;
-    sensorData.Pressure = pres;
-    sensorData.Light = light;
-    sensorData.Moisture = moist;
+    _sensorData.Temperature = temp;
+    _sensorData.Humidity = humid;
+    _sensorData.Pressure = pres;
+    _sensorData.Light = light;
+    _sensorData.Moisture = moist;
 }
