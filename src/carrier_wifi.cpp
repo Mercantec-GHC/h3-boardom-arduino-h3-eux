@@ -143,8 +143,8 @@ bool CarrierWiFi::PostAsJson(const char* endpoint, String jsonBody, String& resp
 
         bool success = false;
 
-        Serial.println("Idx_200" + String(idx_200));
-        Serial.println("Idx_201" + String(idx_201));
+        Serial.println("Idx_200: " + String(idx_200));
+        Serial.println("Idx_201: " + String(idx_201));
         
         if (idx_200 >= 0 || idx_201 >= 0)
         {

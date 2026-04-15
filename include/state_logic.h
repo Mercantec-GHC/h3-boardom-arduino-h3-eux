@@ -7,7 +7,7 @@ void state_init(CarrierUtilities& carrUtil, CarrierWiFi& carrWifi, String devId)
 void saveLastState(DeviceState newState);
 
 DeviceState handleStartup();
-DeviceState handleToken(String* outToken);
+DeviceState handleGetToken();
 
 DeviceState handleDisconnected();
 DeviceState handleConnected(SensorData sensorData, bool& updateScreen);

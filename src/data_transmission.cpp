@@ -11,9 +11,11 @@ DataTransmitter::DataTransmitter()
 {
 }
 
-void DataTransmitter::Init(CarrierWiFi& carrWifi)
+void DataTransmitter::Init(CarrierUtilities& carrUtil, CarrierWiFi& carrWifi, const char* jwtFilename)
 {
+    _carrUtil = &carrUtil;
     _carrWifi = &carrWifi;
+    _jwtFilename = jwtFilename;
 }
 
 bool DataTransmitter::ConnectDashboard(String devId)
@@ -37,13 +39,14 @@ bool DataTransmitter::ConnectDashboard(String devId)
     return false;
 }
 
-bool DataTransmitter::SendHeartbeat(String devId, String* outToken)
+bool DataTransmitter::SendHeartbeat(String devId)
 {
     JSONVar doc;
     doc["deviceId"] = devId;
     String json = JSON.stringify(doc);
 
     String postResponse;
+    String token;
 
     if (_carrWifi->PostAsJson("/Device/heartbeat", json, postResponse, API_SERVER_IP, API_PORT))
     {
@@ -53,9 +56,11 @@ bool DataTransmitter::SendHeartbeat(String devId, String* outToken)
 
         if ((bool)res["success"])
         {
-            Serial.println("Printing JSON Object:");
-            Serial.println(res);
-            *outToken = (const char*)res["accessToken"];
+            token = (const char*)res["accessToken"];
+            Serial.println("Token: " + token);
+
+            _writeJwtToken(token);
+
             return true;
         }
     }
@@ -94,8 +99,27 @@ bool DataTransmitter::SendData(String devId, float temperature, float humidity, 
     return false;
 }
 
+void DataTransmitter::_writeJwtToken(String token)
+{
+    if (token.length() > 0)
+    {
+        bool success = _carrUtil->SD_WriteOver(_jwtFilename, token);
+
+        if (success)
+        {
+            Serial.println("JWT Saved to SD: TRUE");
+        }
+        else
+        {
+            Serial.println("JWT Saved to SD: FALSE");
+        }
+    
+        SetJwtToken(token);
+    }
+}
+
+
 void DataTransmitter::SetJwtToken(String token)
 {
-    Serial.println("Setting WiFi JWT Token: " + token);
     _carrWifi->SetToken(token);
 }

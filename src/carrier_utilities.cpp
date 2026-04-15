@@ -166,14 +166,12 @@ bool CarrierUtilities::SD_Delete(const char* fileName)
             return true;
         }        
     }
+    else
+    {
+       return true; 
+    }
 
     return false;
-
-
-    if (!fileName || fileName[0] == '\0')
-    {
-        return false;
-    }
 }
 
 bool CarrierUtilities::SD_Write(const char* fileName, String data)
@@ -203,6 +201,8 @@ bool CarrierUtilities::SD_WriteOver(const char* fileName, String data)
     {
         return false;
     }
+
+    SD.open(fileName, FILE_WRITE);
 
     return SD_Write(fileName, data);
 }

@@ -30,7 +30,7 @@ void state_init(CarrierUtilities& carrUtil, CarrierWiFi& carrWifi, String devId)
     _devId = devId;
     _stateCarrWifi = &carrWifi;
 
-    _dataTransmit.Init(carrWifi);
+    _dataTransmit.Init(carrUtil, carrWifi, _jwtFilename);
 
     randomSeed(analogRead(A6) ^ micros() ^ millis());
     _heartbeatIntervalMs = random(60000, 180000); // Random interval between 1 and 3 minutes
@@ -55,7 +55,7 @@ void saveLastState(DeviceState newState)
     _lastState = newState;
 }
 
-DeviceState handleToken()
+DeviceState handleGetToken()
 {
     String token = _stateCarrUtil->SD_Read(_jwtFilename);
 
@@ -71,16 +71,15 @@ DeviceState handleToken()
 DeviceState handleStartup()
 {
     DeviceState tempState = DISCONNECTED;
-    String outToken = "";
 
-    if (_dataTransmit.SendHeartbeat(_devId, &outToken))
+    if (_dataTransmit.SendHeartbeat(_devId))
     {
         tempState = CONNECTED;
     }
 
     if (tempState == CONNECTED)
     {
-        tempState = handleToken();
+        tempState = handleGetToken();
     }
     
     return tempState;
@@ -105,9 +104,7 @@ DeviceState handleDisconnected()
 
         if (_dataTransmit.ConnectDashboard(_devId))
         {
-            String outToken = "";
-
-            if (_dataTransmit.SendHeartbeat(_devId, &outToken))
+            if (_dataTransmit.SendHeartbeat(_devId))
             {
                 return CONNECTED;
             }
@@ -125,8 +122,7 @@ DeviceState handleDisconnected()
                 
                 if (millis() - lastHbAttemptMs >= 2500)
                 {
-                    String outToken = "";
-                    if (_dataTransmit.SendHeartbeat(_devId, &outToken))
+                    if (_dataTransmit.SendHeartbeat(_devId))
                     {
                         return CONNECTED;
                     }
@@ -296,9 +292,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
     {
         if (_stateCarrWifi->GetToken().length() > 0)
         {
-            String outToken = "";
-
-            if (_dataTransmit.SendHeartbeat(_devId, &outToken))
+            if (_dataTransmit.SendHeartbeat(_devId))
             {
                 _lastHeartbeatMs = now;
             }
@@ -309,7 +303,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
         }
         else
         {
-            return handleToken();
+            return handleGetToken();
         }
        
     }
@@ -327,7 +321,7 @@ DeviceState handleConnected(SensorData sensorData, bool& updateScreen)
         }
         else
         {
-            return handleToken();
+            return handleGetToken();
         }
 
     }
@@ -359,9 +353,7 @@ DeviceState handleHeartbeatError()
 
         unsigned long now = millis();
 
-        String outToken = "";
-
-        if (_dataTransmit.SendHeartbeat(_devId, &outToken))
+        if (_dataTransmit.SendHeartbeat(_devId))
         {
             _lastHeartbeatMs = now;
             return CONNECTED;
@@ -428,13 +420,11 @@ DeviceState handleTokenError()
 
         _lastState = ERROR;
 
-        DeviceState tempState = handleToken();
+        DeviceState tempState = handleGetToken();
 
         if (tempState == CONNECTED)
         {
-            String outToken = "";
-
-            if (_dataTransmit.SendHeartbeat(_devId, &outToken))
+            if (_dataTransmit.SendHeartbeat(_devId))
             {
                 _lastHeartbeatMs = millis();
                 return CONNECTED;
@@ -446,6 +436,8 @@ DeviceState handleTokenError()
                 return HEARTBEAT_ERROR;
             }
         }
+
+        return ERROR; // just something other than TOKEN_ERROR
     }
 
     return TOKEN_ERROR;
