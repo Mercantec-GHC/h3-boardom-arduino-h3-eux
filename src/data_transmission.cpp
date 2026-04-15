@@ -81,7 +81,7 @@ bool DataTransmitter::SendData(String devId, float temperature, float humidity, 
 
     String postResponse;
 
-    if (_carrWifi->PostAsJson("/sensorData", json, postResponse, API_SERVER_IP, API_PORT))
+    if (_carrWifi->PostAsJson("/Data/sensorData", json, postResponse, API_SERVER_IP, API_PORT))
     {
         JSONVar res = JSON.parse(postResponse);
 

@@ -4,6 +4,11 @@ An Arduino-based C++ application, that can connect to a remote dashboard. It wil
 
 ---
 
+## Frontend and Backend Links
+
+Frontend: https://github.com/MathiasGermandsen/boardom-frontend
+Backend: https://github.com/MathiasGermandsen/boardom-backend
+
 ## Data
 
 The Arduino is able to transmit these data:
